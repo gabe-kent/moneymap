@@ -48,7 +48,12 @@ Standard Rails MVC (no API-only mode, no `app/javascript` framework beyond Stimu
 
 **Background jobs / cache / cable** all run on Postgres via Solid Queue / Solid Cache / Solid Cable (no Redis) — each has its own schema file in `db/` (`queue_schema.rb`, `cache_schema.rb`, `cable_schema.rb`) and its own migration path in production (`config/database.yml`). Recurring jobs are declared in `config/recurring.yml`, not cron.
 
-**Deployment** is via Kamal (`config/deploy.yml`, `.kamal/`) into Docker (`Dockerfile`), fronted by Thruster.
+**Deployment** is via Render, using the `Dockerfile` for both the web and worker services
+(`render.yaml` is a Render Blueprint defining the web service, a background worker running
+`bin/jobs` for Solid Queue, and a managed Postgres instance). `RAILS_MASTER_KEY` is set as a
+Render secret env var (`sync: false` in `render.yaml`), not committed. Migrations run via the
+web service's `preDeployCommand`. Kamal is not used, despite being Rails 8's default scaffold —
+it was removed in favor of Render's managed PaaS (git push → auto-deploy, no server ops).
 
 ## Conventions
 
