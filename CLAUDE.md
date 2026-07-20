@@ -16,6 +16,18 @@ Windows/WSL2 setup history. They describe an aspirational end state and a past s
 not the current repo — treat them as background context, not as a source of truth for what
 exists today. The **Conventions** below are the subset of that plan already adopted for this repo.
 
+### Next steps (as of the Kamal→Render migration)
+
+- **Confirm the live Render deploy actually boots.** `render.yaml`/`config/database.yml` were
+  fixed locally to resolve a Postgres plan-name rejection, a `preDeployCommand` free-plan
+  rejection, and an `ActiveRecord::ConnectionNotEstablished` boot crash (see
+  `docs/environment-setup-runbook.md`, Phase 2) — but none of those fixes have been verified
+  against a real, successful Render deploy yet. Push, trigger a deploy, check the logs.
+- Phase 1 still has two open items: a UI kit (DaisyUI + Lucide recommended) and `db/seeds.rb`
+  with sample data.
+- Free-tier Postgres is deleted 30 days after creation — check the creation date in the Render
+  dashboard and either upgrade or recreate before it expires.
+
 ## Commands
 
 Database is PostgreSQL; you need a running Postgres server (`config/database.yml`,
