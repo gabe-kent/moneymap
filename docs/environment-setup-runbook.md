@@ -470,12 +470,157 @@ Claude Code edits files while you watch them live-reload in the browser.
 
 ---
 
-## Next: Phase 1 continued *(to be filled in)*
+## Phase 2 — Deploy to Render
 
+**Goal:** replace the Rails 8 default Kamal scaffold with a Render Blueprint and get a live URL.
+
+### Step 1 — Drop Kamal, add a Render Blueprint
+
+Rails 8's `rails new` scaffolds Kamal by default (`gem "kamal"`, `config/deploy.yml`, `.kamal/`).
+If you're deploying to Render instead (git-push managed PaaS, no server ops), remove it rather
+than leaving it dormant — it's dead weight and confusing to future-you:
+
+```
+bundle remove kamal
+rm -f config/deploy.yml
+rm -rf .kamal
+```
+
+Add `render.yaml` at the repo root (a **Blueprint** — Render reads this automatically when you
+connect the repo via **New → Blueprint**, and provisions everything it describes in one shot).
+
+### Step 2 — Postgres plan name
+
+- ⚠️ **Issue we hit:** Blueprint validation failed with
+  `databases[0].plan — Legacy Postgres plans, including 'starter', are no longer supported for
+  new databases.`
+- ✅ **Fix:** Render repriced/renamed Postgres plans; the old `starter`/`standard`/`pro` names
+  are legacy and only valid for *existing* databases. New databases need the current size-based
+  names: `free`, `basic-256mb`, `basic-1gb`, `basic-4gb`, `pro-4gb`, … See
+  https://render.com/docs/blueprint-spec for the full list.
+- **Web/worker services are unaffected** — `starter`/`standard`/`pro` are still valid `plan`
+  values for `type: web` / `type: worker` entries. Only the *database* plan naming changed.
+
+### Step 3 — Cost surprise on paid Postgres
+
+- ⚠️ **Issue we hit:** `moneymap-db` on `basic-256mb` showed **$24.50/mo** in the Render
+  dashboard, not the ~$7/mo the build plan assumed (that figure was the old legacy `starter`
+  price). Current breakdown: **$20/mo compute + $4.50/mo storage** (default 15 GB disk ×
+  $0.30/GB/mo, via the `diskSizeGB` field — must be `1` or a multiple of `5`).
+- ✅ **If there's no product built yet, use free tier instead** — no need to pay before there's
+  anything to serve:
+  - `plan: free` on both the database and the web service.
+  - **Background workers are not available on the free plan.** Drop the separate
+    `type: worker` service and run Solid Queue in-process in the web dyno instead
+    (`SOLID_QUEUE_IN_PUMA: "true"` env var — the same trick the default Kamal config used for
+    single-server setups).
+  - Trade-offs to accept while on free: web service spins down after 15 min idle (~1 min cold
+    start on next request); **free Postgres is deleted 30 days after creation** (14-day grace
+    period to upgrade before that) — put a reminder somewhere.
+
+### Step 4 — `preDeployCommand` not supported on free plan
+
+- ⚠️ **Issue we hit:** `services[0] — pre-deploy command is not supported for free tier
+  services.` (We'd set `preDeployCommand: bin/rails db:migrate` on the web service.)
+- ✅ **Fix:** just remove it — it was redundant anyway. Rails 8's default
+  `bin/docker-entrypoint` already runs `./bin/rails db:prepare` (create + migrate) on **every**
+  container boot, whenever the `CMD` ends in `./bin/rails server`:
+
+  ```sh
+  # bin/docker-entrypoint
+  if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
+    ./bin/rails db:prepare
+  fi
+  ```
+
+  The default `Dockerfile` `CMD` is `["./bin/thrust", "./bin/rails", "server"]` — the last two
+  args still match, so this fires regardless of Thruster wrapping the command. Migrations run on
+  every deploy without needing a paid-only `preDeployCommand`.
+
+### Step 5 — `ActiveRecord::ConnectionNotEstablished` on boot
+
+- ⚠️ **Issue we hit:** deploy succeeded but the app crashed on boot with
+  `ActiveRecord::ConnectionNotEstablished: connection to server on socket
+  "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory` (tried three different
+  socket paths, all failed).
+- **Root cause:** Rails 8's default `config/database.yml` production block is written for
+  Kamal, not Render — it expects a local Unix socket (`database: moneymap_production`,
+  `username: moneymap`, `password: ENV["MONEYMAP_DATABASE_PASSWORD"]`), plus **three more
+  separate physical databases** for Solid Cache/Queue/Cable
+  (`moneymap_production_cache`/`_queue`/`_cable`). Render gives you exactly **one** Postgres
+  database, reachable over TCP via a single `DATABASE_URL` env var — nothing in that default
+  config ever looks at `DATABASE_URL`, so it fell through to socket defaults that don't exist on
+  Render.
+- ✅ **Fix — collapse primary/cache/queue/cable onto the same `DATABASE_URL`:**
+
+  ```yaml
+  production:
+    primary: &primary_production
+      <<: *default
+      url: <%= ENV["DATABASE_URL"] %>
+    cache:
+      <<: *primary_production
+      migrations_paths: db/cache_migrate
+    queue:
+      <<: *primary_production
+      migrations_paths: db/queue_migrate
+    cable:
+      <<: *primary_production
+      migrations_paths: db/cable_migrate
+  ```
+
+  All four connections resolve to the identical physical database, differing only in which
+  `migrations_paths` gets applied to it — the Solid Cache/Queue/Cable tables just coexist
+  alongside the app's own tables. This is the standard pattern for hosts (Render, Fly free tier,
+  etc.) that only provision a single Postgres database; only worth splitting back into separate
+  databases at real scale.
+- **Sanity-check this locally before pushing**, since you won't have a Render Postgres to test
+  against: `RAILS_ENV=production DATABASE_URL=postgres://user@localhost/somedb?host=/var/run/postgresql
+  bin/rails runner 'ActiveRecord::Base.configurations.configs_for(env_name: "production").each { |c| puts [c.name, c.database].inspect }'`
+  should print all four config names resolving to the same database — confirms the YAML/ERB is
+  wired correctly without needing a live remote database.
+
+### `render.yaml` reference (free-tier, current state)
+
+```yaml
+databases:
+  - name: moneymap-db
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: moneymap
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: moneymap-db
+          property: connectionString
+      - key: SOLID_QUEUE_IN_PUMA
+        value: "true"
+```
+
+`RAILS_MASTER_KEY` (`sync: false`) still has to be pasted into the Render dashboard manually —
+Blueprints don't let you commit secret values, by design.
+
+---
+
+## Next: Phase 2 continued *(to be filled in)*
+
+- Confirm live Render URL boots cleanly end-to-end (first real deploy)
 - CLAUDE.md finalised
 - DaisyUI UI kit + Lucide icons
 - money-rails initialiser + conventions
 - Seed data (`db/seeds.rb`)
-- First deploy to Render (Phase 2)
+- Before real users/data: move off free plan, split Solid Queue back into its own
+  `type: worker` service, reconsider `preDeployCommand` for migrations
 
 *Record any new issues + fixes here the same way.*
