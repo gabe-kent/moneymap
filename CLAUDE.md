@@ -50,15 +50,18 @@ Standard Rails MVC (no API-only mode, no `app/javascript` framework beyond Stimu
 
 **Deployment** is via Render, using the `Dockerfile` for the web service (`render.yaml` is a
 Render Blueprint). `RAILS_MASTER_KEY` is set as a Render secret env var (`sync: false` in
-`render.yaml`), not committed. Migrations run via the web service's `preDeployCommand`. Kamal is
-not used, despite being Rails 8's default scaffold — it was removed in favor of Render's managed
-PaaS (git push → auto-deploy, no server ops).
+`render.yaml`), not committed. Migrations run via `bin/docker-entrypoint`'s `db:prepare` call,
+which fires on every container boot (Rails 8's default `Dockerfile`/`CMD` behavior) — there's no
+`preDeployCommand` in `render.yaml` because Render's free plan doesn't support it. Kamal is not
+used, despite being Rails 8's default scaffold — it was removed in favor of Render's managed PaaS
+(git push → auto-deploy, no server ops).
 
 Currently running on Render's **free** plan (web + Postgres) while there's no product to serve
 yet — free Postgres expires 30 days after creation, and there's no separate worker service since
 background workers aren't free-plan eligible; Solid Queue runs in-process in the web dyno instead
-(`SOLID_QUEUE_IN_PUMA=true`). Before real users/data: move to paid plans and split Solid Queue
-back into its own `type: worker` service in `render.yaml`.
+(`SOLID_QUEUE_IN_PUMA=true`). Before real users/data: move to paid plans, consider switching
+migrations to an explicit `preDeployCommand` (now supported off the free plan), and split Solid
+Queue back into its own `type: worker` service in `render.yaml`.
 
 ## Conventions
 
