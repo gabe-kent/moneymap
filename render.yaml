@@ -1,6 +1,6 @@
 databases:
   - name: moneymap-db
-    plan: basic-256mb
+    plan: free
     postgresMajorVersion: "16"
 
 services:
@@ -8,7 +8,7 @@ services:
     name: moneymap
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter
+    plan: free
     healthCheckPath: /up
     preDeployCommand: bin/rails db:migrate
     envVars:
@@ -20,19 +20,9 @@ services:
         fromDatabase:
           name: moneymap-db
           property: connectionString
-
-  - type: worker
-    name: moneymap-worker
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerCommand: bin/jobs
-    plan: starter
-    envVars:
-      - key: RAILS_ENV
-        value: production
-      - key: RAILS_MASTER_KEY
-        sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: moneymap-db
-          property: connectionString
+      # Run Solid Queue inside the web dyno instead of a separate worker
+      # service, since background workers aren't available on the free plan.
+      # Move this to a dedicated `type: worker` service (see git history)
+      # once there's real job volume or you upgrade off free.
+      - key: SOLID_QUEUE_IN_PUMA
+        value: "true"

@@ -48,12 +48,17 @@ Standard Rails MVC (no API-only mode, no `app/javascript` framework beyond Stimu
 
 **Background jobs / cache / cable** all run on Postgres via Solid Queue / Solid Cache / Solid Cable (no Redis) — each has its own schema file in `db/` (`queue_schema.rb`, `cache_schema.rb`, `cable_schema.rb`) and its own migration path in production (`config/database.yml`). Recurring jobs are declared in `config/recurring.yml`, not cron.
 
-**Deployment** is via Render, using the `Dockerfile` for both the web and worker services
-(`render.yaml` is a Render Blueprint defining the web service, a background worker running
-`bin/jobs` for Solid Queue, and a managed Postgres instance). `RAILS_MASTER_KEY` is set as a
-Render secret env var (`sync: false` in `render.yaml`), not committed. Migrations run via the
-web service's `preDeployCommand`. Kamal is not used, despite being Rails 8's default scaffold —
-it was removed in favor of Render's managed PaaS (git push → auto-deploy, no server ops).
+**Deployment** is via Render, using the `Dockerfile` for the web service (`render.yaml` is a
+Render Blueprint). `RAILS_MASTER_KEY` is set as a Render secret env var (`sync: false` in
+`render.yaml`), not committed. Migrations run via the web service's `preDeployCommand`. Kamal is
+not used, despite being Rails 8's default scaffold — it was removed in favor of Render's managed
+PaaS (git push → auto-deploy, no server ops).
+
+Currently running on Render's **free** plan (web + Postgres) while there's no product to serve
+yet — free Postgres expires 30 days after creation, and there's no separate worker service since
+background workers aren't free-plan eligible; Solid Queue runs in-process in the web dyno instead
+(`SOLID_QUEUE_IN_PUMA=true`). Before real users/data: move to paid plans and split Solid Queue
+back into its own `type: worker` service in `render.yaml`.
 
 ## Conventions
 
