@@ -1,1 +1,10 @@
 @import "tailwindcss";
+@plugin "./vendor/daisyui.js";
+@plugin "./vendor/daisyui-theme.js" {
+  name: "light";
+  default: true;
+}
+@plugin "./vendor/daisyui-theme.js" {
+  name: "dark";
+  prefersdark: true;
+}

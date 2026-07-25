@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  mount RailsIcons::Engine, at: "/rails_icons"
   get "home/index"
   resource :session
   resources :passwords, param: :token

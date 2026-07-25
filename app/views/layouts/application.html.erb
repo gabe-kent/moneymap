@@ -24,7 +24,16 @@
   </head>
 
   <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+    <div class="navbar bg-base-100 shadow-sm px-5">
+      <div class="flex-1">
+        <%= link_to root_path, class: "btn btn-ghost text-xl gap-2" do %>
+          <%= icon "landmark", class: "size-5" %>
+          Moneymap
+        <% end %>
+      </div>
+    </div>
+
+    <main class="container mx-auto mt-12 px-5 flex">
       <%= yield %>
     </main>
   </body>

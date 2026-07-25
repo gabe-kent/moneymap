@@ -7,3 +7,16 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+# Only User exists as a domain model so far (see CLAUDE.md — no budgeting/finance features yet).
+# A couple of sample logins so dev/demo environments aren't empty.
+[
+  "demo@moneymap.test",
+  "alex@moneymap.test"
+].each do |email_address|
+  User.find_or_create_by!(email_address: email_address) do |user|
+    user.password = "password123"
+  end
+end
+
+puts "Seeded #{User.count} user(s)."

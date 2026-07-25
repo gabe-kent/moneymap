@@ -22,8 +22,11 @@ exists today. The **Conventions** below are the subset of that plan already adop
   and serves 200s on `/` and `/up`. Getting here took four fixes, the last of which is a real
   footgun worth knowing about — see `db:prepare_solid_schemas` in **Architecture → Deployment**
   below before touching `config/database.yml` or the production schema files.
-- Phase 1 still has two open items: a UI kit (DaisyUI + Lucide recommended) and `db/seeds.rb`
-  with sample data.
+- **Phase 1 is complete** (as of 2026-07-24): DaisyUI + Lucide icons are installed (see
+  **Conventions** below for how, since there's no npm/Node in this repo), and `db/seeds.rb` seeds
+  two sample users. Phase 1's remaining scope is now genuine product work — the target data model
+  (Accounts → Categories → Transactions → Budget → Goals → Education) in
+  `docs/financial-literacy-platform-plan.md`.
 - Free-tier Postgres expires 2026-08-19 (created 2026-07-20) — upgrade or recreate before then.
   Recreating will hit the same "queue/cache/cable schemas don't load" issue on first boot;
   `db:prepare_solid_schemas` handles it automatically, no manual action needed.
@@ -99,6 +102,16 @@ Queue back into its own `type: worker` service in `render.yaml`.
   concern) and scopes queries to them; there is no admin/cross-user access path yet.
 - **No React/Vue or JS build framework** — Hotwire (Turbo + Stimulus) only, via importmaps.
 - **No Redis** — Solid Queue / Solid Cache / Solid Cable cover jobs, cache, and cable on Postgres.
+- **UI kit is DaisyUI + Lucide, installed without npm/Node** (this repo has neither): DaisyUI's
+  bundled single-file plugin (`app/assets/tailwind/vendor/daisyui.js` +
+  `daisyui-theme.js`, downloaded from DaisyUI's GitHub release assets, not the npm package) is
+  loaded via `@plugin` in `app/assets/tailwind/application.css` — the Tailwind v4 standalone CLI
+  (`tailwindcss-rails`/`tailwindcss-ruby`) can execute local JS plugin files without Node. To
+  upgrade DaisyUI, re-download those two files from a newer
+  `github.com/saadeghi/daisyui/releases/<tag>` and re-run `bin/rails tailwindcss:build`. Icons use
+  the `rails_icons` gem (pure Ruby, `icon("name")` helper) with the Lucide set vendored as SVGs
+  under `app/assets/svg/icons/lucide` — `bin/rails generate rails_icons:sync --library=lucide`
+  re-syncs them; browse available names at lucide.dev.
 - `strong_migrations` guards against unsafe migrations; `chartkick` + `groupdate` are available
   for future charting needs. `letter_opener` previews mail in the browser in development
   (`config/environments/development.rb`) instead of attempting delivery.
