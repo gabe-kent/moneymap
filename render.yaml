@@ -25,3 +25,10 @@ services:
       # once there's real job volume or you upgrade off free.
       - key: SOLID_QUEUE_IN_PUMA
         value: "true"
+      # Optional: set both to seed a personal login on this service, since
+      # there's no self-serve sign-up yet and SSH/shell access isn't
+      # available on the free plan. See db/seeds.rb.
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false

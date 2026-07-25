@@ -19,4 +19,14 @@
   end
 end
 
+# Personal login, opt-in via env vars set in the Render dashboard (there's no self-serve
+# sign-up yet, and SSH/console access isn't available on the free plan). Only sets the
+# password on creation, so re-running this after changing SEED_ADMIN_PASSWORD won't
+# silently reset an already-created account.
+if ENV["SEED_ADMIN_EMAIL"].present? && ENV["SEED_ADMIN_PASSWORD"].present?
+  User.find_or_create_by!(email_address: ENV["SEED_ADMIN_EMAIL"]) do |user|
+    user.password = ENV["SEED_ADMIN_PASSWORD"]
+  end
+end
+
 puts "Seeded #{User.count} user(s)."
