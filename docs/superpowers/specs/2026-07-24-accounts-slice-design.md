@@ -91,3 +91,28 @@ end
   each gets its own spec when we get there, per the plan's suggested slice order.
 - Whether Account needs archiving once Transactions exists and hard-deleting would lose real
   transaction history.
+
+### Core-loop note (for the Transaction slice, decided now to avoid relitigating later)
+
+Researched two open-source reference implementations before settling this:
+
+- **Firefly III** uses full double-entry bookkeeping — every transaction is a "journal" with at
+  least two linked legs (debit + credit), and categories aren't a separate concept at all;
+  "categories" are really just special expense/revenue *accounts*. Powerful, but heavier
+  machinery than a personal budgeting app needs.
+- **Actual Budget** (YNAB-style) keeps accounts and categories as genuinely separate concepts.
+  Transactions have a **signed `amount`** (positive = in, negative = out). A transfer between the
+  user's own accounts is just **two linked transaction rows** — one negative in the source
+  account, one positive in the destination — connected by a `transfer_id`. Transfers don't count
+  against a category, since they're not real spending.
+
+**Decision: follow Actual Budget's pattern**, not Firefly's. It matches this plan's Account and
+(planned) Category/Transaction shape almost exactly — the one refinement over the original
+plan-doc sketch is **signed `amount_cents`** instead of unsigned-amount-plus-type-only, so
+"sum by category = total spend" is trivial arithmetic with no type-interpretation needed. Keep
+`txn_type` (income/expense/transfer) as an enum for filtering/UI, but let the amount's sign do
+the arithmetic. Transfers get a self-referential link (e.g. `transfer_pair_id`) between the two
+transaction rows they create, and `category` is nullable/blank for transfer-type transactions.
+
+This doesn't change anything about the Account model above — it's forward-looking context for
+whenever the Transaction slice gets its own spec.
