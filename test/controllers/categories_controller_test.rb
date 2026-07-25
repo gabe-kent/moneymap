@@ -100,4 +100,17 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "destroy fails and shows an error when the category has transactions" do
+    account = @user.accounts.create!(name: "Checking", kind: "checking")
+    @category.transactions.create!(user: @user, account: account, amount_cents: 4500, occurred_on: Date.current, txn_type: "expense")
+
+    assert_no_difference -> { Category.count } do
+      delete category_path(@category)
+    end
+
+    assert_redirected_to categories_path
+    follow_redirect!
+    assert_includes response.body, "Cannot delete"
+  end
 end

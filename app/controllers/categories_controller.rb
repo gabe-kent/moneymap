@@ -31,8 +31,11 @@ class CategoriesController < ApplicationController
   end
 
   def destroy
-    @category.destroy
-    redirect_to categories_path, notice: "Category deleted.", status: :see_other
+    if @category.destroy
+      redirect_to categories_path, notice: "Category deleted.", status: :see_other
+    else
+      redirect_to categories_path, alert: "Cannot delete #{@category.name}: it has transactions.", status: :see_other
+    end
   end
 
   private

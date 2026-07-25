@@ -31,8 +31,11 @@ class AccountsController < ApplicationController
   end
 
   def destroy
-    @account.destroy
-    redirect_to accounts_path, notice: "Account deleted.", status: :see_other
+    if @account.destroy
+      redirect_to accounts_path, notice: "Account deleted.", status: :see_other
+    else
+      redirect_to accounts_path, alert: "Cannot delete #{@account.name}: it has transactions.", status: :see_other
+    end
   end
 
   private

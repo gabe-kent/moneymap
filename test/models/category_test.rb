@@ -74,4 +74,19 @@ class CategoryTest < ActiveSupport::TestCase
     end
     assert_not Category.exists?(category.id)
   end
+
+  test "cannot be destroyed while it has transactions" do
+    account = @user.accounts.create!(name: "Checking", kind: "checking")
+    category = @user.categories.create!(name: "Groceries", kind: "expense", color: "orange")
+    category.transactions.create!(user: @user, account: account, amount_cents: 4500, occurred_on: Date.current, txn_type: "expense")
+
+    assert_not category.destroy
+    assert Category.exists?(category.id)
+  end
+
+  test "can still be destroyed when it has no transactions" do
+    category = @user.categories.create!(name: "Groceries", kind: "expense", color: "orange")
+    assert category.destroy
+    assert_not Category.exists?(category.id)
+  end
 end
