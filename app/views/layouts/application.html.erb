@@ -31,9 +31,22 @@
           Moneymap
         <% end %>
       </div>
+      <% if authenticated? %>
+        <div class="flex-none">
+          <%= link_to "Accounts", accounts_path, class: "btn btn-ghost" %>
+        </div>
+      <% end %>
     </div>
 
-    <main class="container mx-auto mt-12 px-5 flex">
+    <main class="container mx-auto mt-12 px-5 flex flex-col gap-5">
+      <% if alert = flash[:alert] %>
+        <div class="alert alert-error" id="alert"><%= alert %></div>
+      <% end %>
+
+      <% if notice = flash[:notice] %>
+        <div class="alert alert-success" id="notice"><%= notice %></div>
+      <% end %>
+
       <%= yield %>
     </main>
   </body>
