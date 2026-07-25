@@ -3,7 +3,17 @@
 The real, working, battle-tested setup sequence — with the specific issues we hit and
 the fixes that worked. Treat it as a living document; update it whenever something bites you.
 
-**Companion to:** the main *Build & Launch Plan* (Phases 0–1 are covered here).
+> ✅ **Status: setup complete, launch proven (2026-07-24).** Phases 0–2 below are done, not
+> aspirational — every step was actually hit, fixed, and verified, ending in a real live
+> deploy: **https://moneymap-1rbv.onrender.com** is up, serving 200s on `/` and `/up`, running
+> Solid Queue without crashing, styled with DaisyUI, and you've signed in with a real seeded
+> login. What's left from here is product work (Phase 4's data model — see
+> `docs/superpowers/plans/` for the first slice) and deferred production-hardening (Phase 5,
+> intentionally postponed until there are real users — see "Next" at the bottom of Phase 2).
+> If you're re-running this setup on a new machine, everything below should still work as
+> written; if something's changed, that's exactly what this doc is for — update it.
+
+**Companion to:** the main *Build & Launch Plan* (Phases 0–2 are covered here).
 
 **Conventions:**
 - Commands run inside the **Ubuntu (WSL2)** shell unless a step says *(PowerShell)*.
@@ -690,12 +700,13 @@ by design.
 
 ---
 
-## Phase 2 — done
+## Phase 2 — done, launch proven
 
 - ✅ Live Render URL confirmed booting cleanly end-to-end, including Solid Queue (Step 6)
 - ✅ CLAUDE.md maintained as things are learned, not a one-time `/init`
 - ✅ DaisyUI UI kit + Lucide icons (installed without npm/Node — see CLAUDE.md Conventions)
 - ✅ Seed data (`db/seeds.rb`) — sample users + opt-in production login (Step 7)
+- ✅ Logged into the live production app with a real account
 
 ## Next
 
