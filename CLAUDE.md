@@ -18,15 +18,15 @@ exists today. The **Conventions** below are the subset of that plan already adop
 
 ### Next steps (as of the Kamal→Render migration)
 
-- **Confirm the live Render deploy actually boots.** `render.yaml`/`config/database.yml` were
-  fixed locally to resolve a Postgres plan-name rejection, a `preDeployCommand` free-plan
-  rejection, and an `ActiveRecord::ConnectionNotEstablished` boot crash (see
-  `docs/environment-setup-runbook.md`, Phase 2) — but none of those fixes have been verified
-  against a real, successful Render deploy yet. Push, trigger a deploy, check the logs.
+- **Render deploy is confirmed live** (verified 2026-07-20): `moneymap-1rbv.onrender.com` boots
+  and serves 200s on `/` and `/up`. Getting here took four fixes, the last of which is a real
+  footgun worth knowing about — see `db:prepare_solid_schemas` in **Architecture → Deployment**
+  below before touching `config/database.yml` or the production schema files.
 - Phase 1 still has two open items: a UI kit (DaisyUI + Lucide recommended) and `db/seeds.rb`
   with sample data.
-- Free-tier Postgres is deleted 30 days after creation — check the creation date in the Render
-  dashboard and either upgrade or recreate before it expires.
+- Free-tier Postgres expires 2026-08-19 (created 2026-07-20) — upgrade or recreate before then.
+  Recreating will hit the same "queue/cache/cable schemas don't load" issue on first boot;
+  `db:prepare_solid_schemas` handles it automatically, no manual action needed.
 
 ## Commands
 
@@ -67,6 +67,20 @@ which fires on every container boot (Rails 8's default `Dockerfile`/`CMD` behavi
 `preDeployCommand` in `render.yaml` because Render's free plan doesn't support it. Kamal is not
 used, despite being Rails 8's default scaffold — it was removed in favor of Render's managed PaaS
 (git push → auto-deploy, no server ops).
+
+`bin/docker-entrypoint` also runs `db:prepare_solid_schemas` (`lib/tasks/solid_schema.rake`) right
+after `db:prepare`. This exists because `config/database.yml`'s `primary`/`cache`/`queue`/`cable`
+roles all point at the same `DATABASE_URL` (one free-tier Postgres, no separate physical
+databases). `db:prepare` alone doesn't handle that: by the time it gets to the `cache`/`queue`/
+`cable` roles the database already exists (`primary` created it), so Rails takes the "run pending
+migrations" path instead of "create + load schema" — and since `db/queue_migrate`, `db/cache_migrate`,
+and `db/cable_migrate` don't exist (only the `db/*_schema.rb` snapshots do), it finds nothing
+pending and silently never loads those schemas. Without the fix, Solid Queue's in-Puma supervisor
+crashes on boot (`solid_queue_recurring_tasks does not exist`) and takes Puma down with it —
+deploy shows `update_failed` even though the app briefly serves a request first. The task checks
+each role's marker table (`solid_queue_jobs`, `solid_cache_entries`, `solid_cable_messages`) and
+loads that role's schema only if missing, so it's a no-op on every normal boot but self-heals the
+next time the Postgres instance gets recreated (see free-tier expiry note above).
 
 Currently running on Render's **free** plan (web + Postgres) while there's no product to serve
 yet — free Postgres expires 30 days after creation, and there's no separate worker service since
