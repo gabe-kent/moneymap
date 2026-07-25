@@ -1,0 +1,36 @@
+<div class="w-full">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-4xl font-bold">Transactions</h1>
+    <%= link_to "New Transaction", new_transaction_path, class: "btn btn-primary" %>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Account</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th>Amount</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @transactions.each do |transaction| %>
+          <tr>
+            <td><%= transaction.occurred_on.to_fs(:long) %></td>
+            <td><%= transaction.account.name %></td>
+            <td><%= transaction.category.name %></td>
+            <td><%= transaction.description %></td>
+            <td><%= humanized_money_with_symbol transaction.amount %></td>
+            <td class="text-right">
+              <%= link_to "Edit", edit_transaction_path(transaction), class: "btn btn-sm btn-ghost" %>
+              <%= button_to "Delete", transaction_path(transaction), method: :delete, data: { turbo_confirm: "Delete this transaction?" }, class: "btn btn-sm btn-ghost text-error" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
