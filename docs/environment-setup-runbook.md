@@ -580,6 +580,78 @@ connect the repo via **New → Blueprint**, and provisions everything it describ
   should print all four config names resolving to the same database — confirms the YAML/ERB is
   wired correctly without needing a live remote database.
 
+### Step 6 — Solid Queue/Cache/Cable schemas silently never load
+
+- ⚠️ **Issue we hit:** deploy went `live`, `/` and `/up` returned 200 — but Solid Queue's
+  in-Puma supervisor then crashed on `PG::UndefinedTable: relation "solid_queue_recurring_tasks"
+  does not exist`, which killed the whole Puma process. Render reported the deploy as
+  `update_failed` even though the app had briefly served a real request first.
+- **Root cause:** the Step 5 fix collapses `primary`/`cache`/`queue`/`cable` onto one physical
+  database — but `db:prepare` decides *per role* whether to "create + load schema" or "run
+  pending migrations" based on whether that database already exists. By the time `db:prepare`
+  reaches `cache`/`queue`/`cable`, the database already exists (`primary` created it moments
+  earlier), so it takes the migrate path — and finds nothing pending, because `db/queue_migrate`,
+  `db/cache_migrate`, and `db/cable_migrate` don't exist (Rails only ships the `db/*_schema.rb`
+  snapshots for these, no migration files). It silently does nothing.
+- ✅ **Fix — check and load explicitly, don't rely on `db:prepare`'s auto-detection:**
+
+  ```ruby
+  # lib/tasks/solid_schema.rake
+  namespace :db do
+    desc "Load Solid Queue/Cache/Cable schemas if their tables are missing"
+    task prepare_solid_schemas: :environment do
+      { queue: "solid_queue_jobs", cache: "solid_cache_entries", cable: "solid_cable_messages" }.each do |role, table|
+        config = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env, name: role.to_s)
+        next unless config
+
+        ActiveRecord::Base.establish_connection(config)
+        unless ActiveRecord::Base.connection.table_exists?(table)
+          ActiveRecord::Tasks::DatabaseTasks.load_schema(config, ActiveRecord.schema_format)
+        end
+      end
+    ensure
+      ActiveRecord::Base.establish_connection(:primary)
+    end
+  end
+  ```
+
+  Call it right after `db:prepare` in `bin/docker-entrypoint`. Checking the marker table first
+  makes it a no-op on every normal boot but self-healing the day `moneymap-db` gets recreated
+  (free-tier Postgres expires 30 days after creation).
+- **Sanity-check locally before trusting it in production** — reproduce the exact failure against
+  a throwaway local Postgres with all four roles pointed at one `DATABASE_URL` (matching
+  production), confirm the bug reproduces, then confirm the new task fixes it:
+
+  ```
+  createdb moneymap_repro_test
+  DATABASE_URL="postgres://$(whoami)@%2Fvar%2Frun%2Fpostgresql/moneymap_repro_test" \
+    RAILS_ENV=production SECRET_KEY_BASE=dummy bin/rails db:prepare
+  psql -d moneymap_repro_test -c '\dt'   # only users/sessions/schema_migrations — confirms the bug
+  DATABASE_URL="postgres://$(whoami)@%2Fvar%2Frun%2Fpostgresql/moneymap_repro_test" \
+    RAILS_ENV=production SECRET_KEY_BASE=dummy bin/rails db:prepare_solid_schemas
+  psql -d moneymap_repro_test -c '\dt'   # solid_queue_* / solid_cache_entries / solid_cable_messages now present
+  dropdb moneymap_repro_test
+  ```
+
+### Step 7 — No SSH/console access on the free plan
+
+- ⚠️ **Issue we hit:** wanted to `bin/rails console` into production to create a real login
+  (there's no self-serve sign-up yet — Rails 8's `generate authentication` only scaffolds
+  sign-in + password reset). `render ssh <service>` failed with `exit status 255`. Registering
+  an SSH public key with the Render account (dashboard → Account Settings → SSH Public Keys)
+  fixed the *authentication* — `ssh -vvv` showed `Authenticated ... using "publickey"` — but the
+  session still closed immediately with no shell.
+- **Root cause:** confirmed in [Render's SSH docs](https://render.com/docs/ssh) — free-tier web
+  services don't support SSH or dashboard shell access **at all**. The proxy accepts the TCP/key
+  handshake (proving the key is valid) but refuses to open a shell into a free-plan instance. Not
+  fixable by SSH config; it's a hard plan restriction.
+- ✅ **Fix — seed the login instead of using console.** `db/seeds.rb` creates one user from
+  `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` env vars (both `sync: false` in `render.yaml`, set via
+  the Render dashboard) when both are present, and only touches the password on creation so it's
+  safe to leave running on every boot. Since `db:prepare`'s own auto-seed only fires the *first*
+  time a database is created — and `moneymap-db` already existed — `db:seed` needs to run
+  explicitly in `bin/docker-entrypoint` alongside `db:prepare`, not rely on that auto-seed.
+
 ### `render.yaml` reference (free-tier, current state)
 
 ```yaml
@@ -606,21 +678,32 @@ services:
           property: connectionString
       - key: SOLID_QUEUE_IN_PUMA
         value: "true"
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
 ```
 
-`RAILS_MASTER_KEY` (`sync: false`) still has to be pasted into the Render dashboard manually —
-Blueprints don't let you commit secret values, by design.
+`RAILS_MASTER_KEY`, `SEED_ADMIN_EMAIL`, and `SEED_ADMIN_PASSWORD` (all `sync: false`) still have
+to be pasted into the Render dashboard manually — Blueprints don't let you commit secret values,
+by design.
 
 ---
 
-## Next: Phase 2 continued *(to be filled in)*
+## Phase 2 — done
 
-- Confirm live Render URL boots cleanly end-to-end (first real deploy)
-- CLAUDE.md finalised
-- DaisyUI UI kit + Lucide icons
-- money-rails initialiser + conventions
-- Seed data (`db/seeds.rb`)
-- Before real users/data: move off free plan, split Solid Queue back into its own
-  `type: worker` service, reconsider `preDeployCommand` for migrations
+- ✅ Live Render URL confirmed booting cleanly end-to-end, including Solid Queue (Step 6)
+- ✅ CLAUDE.md maintained as things are learned, not a one-time `/init`
+- ✅ DaisyUI UI kit + Lucide icons (installed without npm/Node — see CLAUDE.md Conventions)
+- ✅ Seed data (`db/seeds.rb`) — sample users + opt-in production login (Step 7)
+
+## Next
+
+- Before real users/data: move off free plan (also unlocks SSH — see Step 7), split Solid Queue
+  back into its own `type: worker` service, reconsider `preDeployCommand` for migrations
+- Once off free plan / SSH is available, consider whether the `SEED_ADMIN_*` env var approach is
+  still needed or whether console access supersedes it
+- money-rails initialiser is still all defaults (`config/initializers/money.rb`) — revisit once
+  actual money fields exist beyond the plan doc
 
 *Record any new issues + fixes here the same way.*
