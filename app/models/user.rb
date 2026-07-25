@@ -5,4 +5,11 @@ class User < ApplicationRecord
   has_many :categories, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
+
+  after_create :seed_default_categories
+
+  private
+    def seed_default_categories
+      SeedDefaultCategories.new(self).call
+    end
 end
