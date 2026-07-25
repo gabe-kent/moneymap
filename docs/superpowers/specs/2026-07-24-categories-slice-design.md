@@ -91,7 +91,9 @@ New users get 8 categories automatically — one per color, covering both kinds:
 
 Implemented as a service (`app/services/seed_default_categories.rb`, one public `#call` method,
 matching CLAUDE.md's "business logic belongs in `app/services/`" convention), invoked from a
-`User#after_create_commit` callback.
+`User#after_create` callback (not `after_create_commit` — the implementation plan corrected this
+during Task 2: seeding is a same-database write with no external system involved, so it should
+roll back atomically with the user creation on failure, which only plain `after_create` gives you).
 
 This only fires for users created **after** this ships. Already-existing users (the seeded
 demo/alex accounts, the production `SEED_ADMIN_*` login) will not retroactively get default
