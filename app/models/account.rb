@@ -15,4 +15,8 @@ class Account < ApplicationRecord
   validates :name, presence: true
   validates :kind, presence: true
   validates :starting_balance_cents, presence: true
+
+  def current_balance
+    Money.new(starting_balance_cents + transactions.sum(:amount_cents), "USD")
+  end
 end

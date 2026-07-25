@@ -10,7 +10,7 @@
         <tr>
           <th>Name</th>
           <th>Kind</th>
-          <th>Starting balance</th>
+          <th>Balance</th>
           <th></th>
         </tr>
       </thead>
@@ -19,7 +19,7 @@
           <tr>
             <td><%= account.name %></td>
             <td><%= account.kind.titleize %></td>
-            <td><%= humanized_money_with_symbol account.starting_balance %></td>
+            <td><%= humanized_money_with_symbol account.current_balance %></td>
             <td class="text-right">
               <%= link_to "Edit", edit_account_path(account), class: "btn btn-sm btn-ghost" %>
               <%= button_to "Delete", account_path(account), method: :delete, data: { turbo_confirm: "Delete #{account.name}?" }, class: "btn btn-sm btn-ghost text-error" %>

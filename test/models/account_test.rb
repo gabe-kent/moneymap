@@ -69,4 +69,26 @@ class AccountTest < ActiveSupport::TestCase
     assert account.destroy
     assert_not Account.exists?(account.id)
   end
+
+  test "current_balance is the starting balance when there are no transactions" do
+    account = @user.accounts.create!(name: "Checking", kind: "checking", starting_balance_cents: 10_000)
+    assert_equal Money.new(10_000, "USD"), account.current_balance
+  end
+
+  test "current_balance reflects the sum of its transactions" do
+    category = @user.categories.create!(name: "Groceries", kind: "expense", color: "orange")
+    account = @user.accounts.create!(name: "Checking", kind: "checking", starting_balance_cents: 10_000)
+    account.transactions.create!(user: @user, category: category, amount_cents: 4500, occurred_on: Date.current, txn_type: "expense")
+
+    assert_equal Money.new(5_500, "USD"), account.current_balance
+  end
+
+  test "current_balance is unaffected by other accounts' transactions" do
+    category = @user.categories.create!(name: "Groceries", kind: "expense", color: "orange")
+    account = @user.accounts.create!(name: "Checking", kind: "checking", starting_balance_cents: 10_000)
+    other_account = @user.accounts.create!(name: "Savings", kind: "savings", starting_balance_cents: 20_000)
+    other_account.transactions.create!(user: @user, category: category, amount_cents: 4500, occurred_on: Date.current, txn_type: "expense")
+
+    assert_equal Money.new(10_000, "USD"), account.current_balance
+  end
 end

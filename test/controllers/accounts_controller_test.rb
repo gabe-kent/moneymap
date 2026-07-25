@@ -99,4 +99,15 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_includes response.body, "Cannot delete"
   end
+
+  test "index shows the account's current balance including transactions" do
+    category = @user.categories.create!(name: "Groceries", kind: "expense", color: "orange")
+    account = @user.accounts.create!(name: "Checking", kind: "checking", starting_balance_cents: 10_000)
+    account.transactions.create!(user: @user, category: category, amount_cents: 4500, occurred_on: Date.current, txn_type: "expense")
+
+    get accounts_path
+
+    assert_response :success
+    assert_includes response.body, "$55"
+  end
 end
