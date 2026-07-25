@@ -1,0 +1,32 @@
+<div class="w-full">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-4xl font-bold">Accounts</h1>
+    <%= link_to "New Account", new_account_path, class: "btn btn-primary" %>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Kind</th>
+          <th>Starting balance</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @accounts.each do |account| %>
+          <tr>
+            <td><%= account.name %></td>
+            <td><%= account.kind.titleize %></td>
+            <td><%= humanized_money_with_symbol account.starting_balance %></td>
+            <td class="text-right">
+              <%= link_to "Edit", edit_account_path(account), class: "btn btn-sm btn-ghost" %>
+              <%= button_to "Delete", account_path(account), method: :delete, data: { turbo_confirm: "Delete #{account.name}?" }, class: "btn btn-sm btn-ghost text-error" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

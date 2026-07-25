@@ -1,0 +1,28 @@
+<%= form_with model: account, class: "w-full max-w-md" do |form| %>
+  <% if account.errors.any? %>
+    <div class="alert alert-error mb-5">
+      <ul>
+        <% account.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= form.label :name, class: "label" %>
+    <%= form.text_field :name, required: true, autofocus: true, class: "input input-bordered w-full" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :kind, class: "label" %>
+    <%= form.select :kind, Account.kinds.keys.map { |k| [ k.titleize, k ] }, { prompt: "Select a kind" }, { required: true, class: "select select-bordered w-full" } %>
+  </div>
+
+  <div class="mb-6">
+    <%= form.label :starting_balance, "Starting balance", class: "label" %>
+    <%= form.number_field :starting_balance, step: "0.01", class: "input input-bordered w-full" %>
+  </div>
+
+  <%= form.submit class: "btn btn-primary" %>
+<% end %>
