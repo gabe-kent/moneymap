@@ -1,0 +1,32 @@
+<div class="w-full">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-4xl font-bold">Categories</h1>
+    <%= link_to "New Category", new_category_path, class: "btn btn-primary" %>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Name</th>
+          <th>Kind</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @categories.each do |category| %>
+          <tr>
+            <td><span class="inline-block size-4 rounded-full <%= category_color_classes(category.color) %>"></span></td>
+            <td><%= category.name %></td>
+            <td><%= category.kind.titleize %></td>
+            <td class="text-right">
+              <%= link_to "Edit", edit_category_path(category), class: "btn btn-sm btn-ghost" %>
+              <%= button_to "Delete", category_path(category), method: :delete, data: { turbo_confirm: "Delete #{category.name}?" }, class: "btn btn-sm btn-ghost text-error" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
