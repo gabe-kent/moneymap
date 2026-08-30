@@ -1,13 +1,14 @@
 class Transaction < ApplicationRecord
   belongs_to :user
   belongs_to :account
-  belongs_to :category
+  belongs_to :category, optional: true
 
   monetize :amount_cents
 
   enum :txn_type, {
     income: "income",
-    expense: "expense"
+    expense: "expense",
+    transfer: "transfer"
   }
 
   before_validation :apply_sign_convention
@@ -21,7 +22,7 @@ class Transaction < ApplicationRecord
 
   private
     def apply_sign_convention
-      return if amount_cents.blank?
+      return if amount_cents.blank? || transfer?
       self.amount_cents = income? ? amount_cents.abs : -amount_cents.abs
     end
 

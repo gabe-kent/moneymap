@@ -27,7 +27,7 @@ class TransactionTest < ActiveSupport::TestCase
 
   test "raises on a txn_type outside the fixed list" do
     transaction = @user.transactions.build(account: @account, category: @category, amount_cents: 4500, occurred_on: Date.current)
-    assert_raises(ArgumentError) { transaction.txn_type = "transfer" }
+    assert_raises(ArgumentError) { transaction.txn_type = "bitcoin" }
   end
 
   test "forces a positive amount for income regardless of submitted sign" do
@@ -66,6 +66,16 @@ class TransactionTest < ActiveSupport::TestCase
 
     assert_not transaction.valid?
     assert_includes transaction.errors[:category], "kind must match transaction type"
+  end
+
+  test "does not apply the sign convention to a transfer with a negative amount" do
+    transaction = @user.transactions.create!(account: @account, amount_cents: -5000, occurred_on: Date.current, txn_type: "transfer")
+    assert_equal(-5000, transaction.amount_cents)
+  end
+
+  test "does not apply the sign convention to a transfer with a positive amount" do
+    transaction = @user.transactions.create!(account: @account, amount_cents: 5000, occurred_on: Date.current, txn_type: "transfer")
+    assert_equal 5000, transaction.amount_cents
   end
 
   test "requires a user" do
