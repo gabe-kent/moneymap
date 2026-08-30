@@ -51,10 +51,21 @@
     def change
       change_column_null :transactions, :category_id, true
       add_column :transactions, :transfer_id, :string
-      add_index :transactions, :transfer_id
+      safety_assured { add_index :transactions, :transfer_id }
     end
   end
   ```
+
+  `strong_migrations` (this app's gem for catching unsafe migrations) flags a plain
+  `add_index` on an existing table as unsafe by default — a non-concurrent index build
+  locks the table against writes for its duration. Its own suggested fix is
+  `algorithm: :concurrently` + `disable_ddl_transaction!`, but that splits this migration's
+  atomicity (the column changes above could no longer roll back together with the index if
+  something failed partway through) to solve a production-scale concern this app doesn't have
+  yet — `transactions` currently holds a handful of rows, not enough for a blocking index build
+  to matter in practice. `safety_assured { ... }` is strong_migrations' own escape hatch for
+  exactly this judgment call: keep the migration atomic and simple now, reconsider
+  `:concurrently` if this table ever grows large enough for it to matter.
 
 - [ ] **Step 3: Run the migration**
 
