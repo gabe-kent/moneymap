@@ -1,13 +1,15 @@
-<div class="mx-auto md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Forgot your password?</h1>
+<div class="card bg-base-100 shadow-sm w-full max-w-md mx-auto">
+  <div class="card-body">
+    <h1 class="card-title text-3xl mb-2">Forgot your password?</h1>
+    <p class="text-sm text-base-content/70 mb-2">We'll email you instructions to reset it.</p>
 
-  <%= form_with url: passwords_path, class: "contents" do |form| %>
-    <div class="my-5">
-      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], class: "block shadow-sm rounded-md border border-gray-400 focus:outline-solid focus:outline-blue-600 px-3 py-2 mt-2 w-full" %>
-    </div>
+    <%= form_with url: passwords_path do |form| %>
+      <div class="mb-6">
+        <%= form.label :email_address, "Email address", class: "label" %>
+        <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "you@example.com", value: params[:email_address], class: "input input-bordered w-full" %>
+      </div>
 
-    <div class="inline">
-      <%= form.submit "Email reset instructions", class: "w-full sm:w-auto text-center rounded-lg px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
-    </div>
-  <% end %>
+      <%= form.submit "Email reset instructions", class: "btn btn-primary" %>
+    <% end %>
+  </div>
 </div>

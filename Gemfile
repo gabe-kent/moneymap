@@ -72,5 +72,7 @@ gem "strong_migrations", "~> 2.8"
 gem "money-rails", "~> 3.0"
 gem "chartkick", "~> 5.2"
 gem "groupdate", "~> 6.8"
+# Rate-limit sensitive endpoints (login, password reset) [https://github.com/rack/rack-attack]
+gem "rack-attack", "~> 6.7"
 
 gem "letter_opener", "~> 1.10", group: :development
