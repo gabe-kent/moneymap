@@ -700,6 +700,28 @@ by design.
 
 ---
 
+### Step 8 — Render MCP server (works around no SSH access)
+
+Since Step 7 established there's no shell/console access on the free plan, the Render MCP
+server is the practical substitute for day-to-day operations: it lets Claude Code query your
+Render account directly from the chat — list services, tail logs, check deploy status, inspect
+env vars — without needing SSH or the dashboard.
+
+```
+claude mcp add --transport http render https://mcp.render.com/mcp \
+  --header "Authorization: Bearer <RENDER_API_KEY>"
+```
+
+- Get `<RENDER_API_KEY>` from the Render dashboard → **Account Settings → API Keys**.
+- Default scope is **local** (private to you, stored in `~/.claude.json`, never committed —
+  this repo has no `.mcp.json`, so nothing project-shared is affected). Use `-s user` instead if
+  you want it available in every project, not just this one.
+- **Verify:** `claude mcp list` should show `render: https://mcp.render.com/mcp (HTTP) - ✓ Connected`.
+- ⚠️ The API key is a secret — it's stored in `~/.claude.json`, not in this repo, but treat it
+  like any other credential (don't paste it into commits, issues, or logs).
+
+---
+
 ## Phase 2 — done, launch proven
 
 - ✅ Live Render URL confirmed booting cleanly end-to-end, including Solid Queue (Step 6)
