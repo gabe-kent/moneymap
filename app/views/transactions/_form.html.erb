@@ -11,7 +11,7 @@
 
   <div class="mb-4">
     <%= form.label :txn_type, "Type", class: "label" %>
-    <%= form.select :txn_type, Transaction.txn_types.keys.map { |k| [ k.titleize, k ] }, { prompt: "Select a type" }, { required: true, class: "select select-bordered w-full" } %>
+    <%= form.select :txn_type, %w[income expense].map { |k| [ k.titleize, k ] }, { prompt: "Select a type" }, { required: true, class: "select select-bordered w-full" } %>
   </div>
 
   <div class="mb-4">

@@ -1,4 +1,16 @@
-<div class="w-full">
+<div class="w-full" data-controller="transaction-type-toggle">
   <h1 class="text-4xl font-bold mb-6">New Transaction</h1>
-  <%= render "form", transaction: @transaction %>
+
+  <div class="mb-4">
+    <%= label_tag :entry_type, "Type", class: "label" %>
+    <%= select_tag :entry_type, options_for_select([ [ "Income / Expense", "transaction" ], [ "Transfer", "transfer" ] ]), data: { action: "change->transaction-type-toggle#toggle" }, class: "select select-bordered w-full" %>
+  </div>
+
+  <div data-transaction-type-toggle-target="transactionFields">
+    <%= render "form", transaction: @transaction %>
+  </div>
+
+  <div data-transaction-type-toggle-target="transferFields" hidden>
+    <%= render "transfers/form", transfer: @transfer %>
+  </div>
 </div>

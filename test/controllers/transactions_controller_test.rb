@@ -23,6 +23,16 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, other_account.name
   end
 
+  test "index renders successfully when a transfer leg has no category" do
+    checking = @user.accounts.create!(name: "Checking 2", kind: "checking")
+    savings = @user.accounts.create!(name: "Savings", kind: "savings")
+    TransferForm.new(from_account_id: checking.id, to_account_id: savings.id, amount: "50.00", occurred_on: Date.current).save(@user)
+
+    get transactions_path
+
+    assert_response :success
+  end
+
   test "new renders the form" do
     get new_transaction_path
     assert_response :success
@@ -122,5 +132,37 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :not_found
+  end
+
+  test "new also builds a transfer form for the page's toggle" do
+    get new_transaction_path
+    assert_response :success
+    assert_includes response.body, "From account"
+  end
+
+  test "edit on a transfer redirects to the transfer's edit page" do
+    checking = @user.accounts.create!(name: "Checking 2", kind: "checking")
+    savings = @user.accounts.create!(name: "Savings", kind: "savings")
+    form = TransferForm.new(from_account_id: checking.id, to_account_id: savings.id, amount: "50.00", occurred_on: Date.current)
+    form.save(@user)
+    transfer_leg = checking.transactions.last
+
+    get edit_transaction_path(transfer_leg)
+
+    assert_redirected_to edit_transfer_path(transfer_leg.transfer_id)
+  end
+
+  test "destroy on a transfer leg removes both legs" do
+    checking = @user.accounts.create!(name: "Checking 2", kind: "checking")
+    savings = @user.accounts.create!(name: "Savings", kind: "savings")
+    form = TransferForm.new(from_account_id: checking.id, to_account_id: savings.id, amount: "50.00", occurred_on: Date.current)
+    form.save(@user)
+    transfer_leg = checking.transactions.last
+
+    assert_difference -> { Transaction.count }, -2 do
+      delete transaction_path(transfer_leg)
+    end
+
+    assert_redirected_to transactions_path
   end
 end

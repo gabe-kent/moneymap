@@ -7,6 +7,7 @@ class TransactionsController < ApplicationController
 
   def new
     @transaction = Current.user.transactions.build(occurred_on: Date.current)
+    @transfer = TransferForm.new(occurred_on: Date.current)
   end
 
   def create
@@ -15,11 +16,13 @@ class TransactionsController < ApplicationController
     if @transaction.save
       redirect_to transactions_path, notice: "Transaction created."
     else
+      @transfer = TransferForm.new(occurred_on: Date.current)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
+    redirect_to edit_transfer_path(@transaction.transfer_id) if @transaction.transfer?
   end
 
   def update
@@ -31,8 +34,13 @@ class TransactionsController < ApplicationController
   end
 
   def destroy
-    @transaction.destroy
-    redirect_to transactions_path, notice: "Transaction deleted.", status: :see_other
+    if @transaction.transfer?
+      TransferForm.find(Current.user, @transaction.transfer_id).destroy(Current.user)
+      redirect_to transactions_path, notice: "Transfer deleted.", status: :see_other
+    else
+      @transaction.destroy
+      redirect_to transactions_path, notice: "Transaction deleted.", status: :see_other
+    end
   end
 
   private

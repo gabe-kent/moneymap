@@ -21,7 +21,7 @@
           <tr>
             <td><%= transaction.occurred_on.to_fs(:long) %></td>
             <td><%= transaction.account.name %></td>
-            <td><%= transaction.category.name %></td>
+            <td><%= transaction.category&.name %></td>
             <td><%= transaction.description %></td>
             <td><%= humanized_money_with_symbol transaction.amount %></td>
             <td class="text-right">
