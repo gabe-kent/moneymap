@@ -65,6 +65,23 @@ they're for, not alphabetically.
 |---|---|
 | `caveman` | Ultra-compressed "caveman mode" responses (`/cs:caveman`) — cuts filler for terse output when token budget matters more than prose. Personal preference, not a dev-workflow necessity. |
 
+**Repo-level activation (`caveman-init`):** the `caveman` plugin's `/caveman:caveman-init` command
+can drop an always-on caveman rule directly into a repo, so it applies for *any* agent that reads
+these files (not just Claude Code sessions where you've typed `/cs:caveman`). Run in your own
+terminal — the script is a plain local file-writer (no network calls of its own beyond the
+initial download) but piping a remote script into `node` is the kind of thing worth eyeballing
+first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/src/tools/caveman-init.js | node - --dry-run   # preview
+curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/src/tools/caveman-init.js | node -             # apply
+```
+
+This repo has it applied — it wrote `AGENTS.md` (repo root, read by Claude Code alongside
+`CLAUDE.md`) plus `.cursor/rules/caveman.mdc`, `.windsurf/rules/caveman.md`,
+`.clinerules/caveman.md`, and `.github/copilot-instructions.md` for parity with other IDE agents.
+Idempotent and safe to re-run; pass `--force` to overwrite, `--only <agent>` to target one.
+
 ⚠️ **Known duplication to clean up:** `superpowers` and `caveman` are each installed **twice**
 from two different marketplaces (`superpowers@superpowers-dev` + `superpowers@claude-plugins-official`;
 `caveman@claude-code-skills` + `caveman@caveman`) — visible in `~/.claude/settings.json`'s
