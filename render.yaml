@@ -1,3 +1,9 @@
+# Free-tier Postgres expires ~30 days after creation and gets auto-suspended by
+# Render's billing system (see docs/environment-setup-runbook.md, Phase 2 Step 3).
+# When that happens: delete the suspended instance in the dashboard, then push any
+# commit (or trigger a Manual Sync on the Blueprint's page) -- Render recreates a
+# Blueprint-managed resource it can't find, matching this exact declaration, and
+# DATABASE_URL below re-resolves to it automatically via fromDatabase.
 databases:
   - name: moneymap-db
     plan: free
