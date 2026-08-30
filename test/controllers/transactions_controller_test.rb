@@ -68,6 +68,14 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "edit pre-fills an expense's amount as positive, not the signed stored value" do
+    get edit_transaction_path(@transaction)
+
+    assert_response :success
+    assert_includes response.body, 'value="45.00"'
+    assert_not_includes response.body, 'value="-45.00"'
+  end
+
   test "edit on another user's transaction is not found" do
     other_account = @other_user.accounts.create!(name: "Their Checking", kind: "checking")
     other_category = @other_user.categories.create!(name: "Their Groceries", kind: "expense", color: "orange")

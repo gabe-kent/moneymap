@@ -26,7 +26,7 @@
 
   <div class="mb-4">
     <%= form.label :amount, class: "label" %>
-    <%= form.number_field :amount, step: "0.01", min: "0", class: "input input-bordered w-full" %>
+    <%= form.number_field :amount, step: "0.01", min: "0", value: transaction.amount&.abs, class: "input input-bordered w-full" %>
   </div>
 
   <div class="mb-4">
