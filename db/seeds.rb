@@ -8,7 +8,6 @@
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
 
-# Only User exists as a domain model so far (see CLAUDE.md — no budgeting/finance features yet).
 # A couple of sample logins so dev/demo environments aren't empty.
 [
   "demo@moneymap.test",
@@ -17,6 +16,97 @@
   User.find_or_create_by!(email_address: email_address) do |user|
     user.password = "password123"
   end
+end
+
+# Demo data (accounts, categories, ~3 months of transactions) for the demo user only, so the
+# hosted app has something to look at. Gated on "no accounts yet" rather than per-record
+# find_or_create_by, since transactions have no natural unique key — safe to leave running on
+# every boot (like the rest of this file) because it only ever fires once per user. Wrapped in a
+# transaction so a mid-run failure can't leave partial data behind: either it all lands, or the
+# guard is still false next boot and it retries cleanly. Categories use find_or_create_by! since
+# some may already exist from manual testing before this seed data existed.
+demo_user = User.find_by!(email_address: "demo@moneymap.test")
+
+if demo_user.accounts.none?
+  ActiveRecord::Base.transaction do
+    checking = demo_user.accounts.create!(name: "Everyday Checking", kind: "checking", starting_balance_cents: 250_000)
+    savings  = demo_user.accounts.create!(name: "Emergency Fund", kind: "savings", starting_balance_cents: 800_000)
+    credit   = demo_user.accounts.create!(name: "Rewards Card", kind: "credit", starting_balance_cents: 0)
+
+    category = ->(name, kind, color) do
+      demo_user.categories.find_or_create_by!(name: name) { |c| c.kind = kind; c.color = color }
+    end
+
+    salary         = category.call("Salary", "income", "green")
+    freelance      = category.call("Freelance", "income", "teal")
+    rent           = category.call("Rent", "expense", "red")
+    groceries      = category.call("Groceries", "expense", "orange")
+    utilities      = category.call("Utilities", "expense", "yellow")
+    dining         = category.call("Dining Out", "expense", "pink")
+    transportation = category.call("Transportation", "expense", "blue")
+    entertainment  = category.call("Entertainment", "expense", "purple")
+
+    rng = Random.new(20260830) # fixed seed so demo data looks the same every time it's (re-)generated
+    today = Date.current
+    # Current month plus the two before it, capped at "today" so nothing is dated in the future.
+    [ 2, 1, 0 ].map { |n| (today << n).beginning_of_month }.each do |month_start|
+      month_end = [ month_start.end_of_month, today ].min
+
+      demo_user.transactions.create!(account: checking, category: salary, txn_type: "income",
+        amount_cents: 320_000, occurred_on: month_start, description: "Paycheck")
+
+      payday_two = month_start + 14
+      if payday_two <= month_end
+        demo_user.transactions.create!(account: checking, category: salary, txn_type: "income",
+          amount_cents: 320_000, occurred_on: payday_two, description: "Paycheck")
+      end
+
+      if rng.rand < 0.6
+        demo_user.transactions.create!(account: checking, category: freelance, txn_type: "income",
+          amount_cents: rng.rand(20_000..80_000), occurred_on: [ month_start + 8, month_end ].min,
+          description: "Freelance invoice")
+      end
+
+      demo_user.transactions.create!(account: checking, category: rent, txn_type: "expense",
+        amount_cents: 150_000, occurred_on: month_start, description: "Rent")
+
+      utilities_day = month_start + 4
+      if utilities_day <= month_end
+        demo_user.transactions.create!(account: checking, category: utilities, txn_type: "expense",
+          amount_cents: rng.rand(9_000..16_000), occurred_on: utilities_day, description: "Electric & water")
+      end
+
+      (month_start..month_end).step(7) do |day|
+        demo_user.transactions.create!(account: checking, category: groceries, txn_type: "expense",
+          amount_cents: rng.rand(5_500..11_000), occurred_on: day, description: "Groceries")
+      end
+
+      ((month_start + 2)..month_end).step(6) do |day|
+        demo_user.transactions.create!(account: credit, category: dining, txn_type: "expense",
+          amount_cents: rng.rand(1_800..6_500), occurred_on: day, description: "Dining out")
+      end
+
+      ((month_start + 3)..month_end).step(9) do |day|
+        demo_user.transactions.create!(account: credit, category: transportation, txn_type: "expense",
+          amount_cents: rng.rand(2_000..7_000), occurred_on: day, description: "Gas & rideshare")
+      end
+
+      ((month_start + 6)..month_end).step(13) do |day|
+        demo_user.transactions.create!(account: credit, category: entertainment, txn_type: "expense",
+          amount_cents: rng.rand(1_200..4_500), occurred_on: day, description: "Movie night")
+      end
+
+      transfer_day = [ month_start + 16, month_end ].min
+      transfer_id = SecureRandom.uuid
+      demo_user.transactions.create!(account: checking, txn_type: "transfer", transfer_id: transfer_id,
+        amount_cents: -50_000, occurred_on: transfer_day, description: "Transfer to savings")
+      demo_user.transactions.create!(account: savings, txn_type: "transfer", transfer_id: transfer_id,
+        amount_cents: 50_000, occurred_on: transfer_day, description: "Transfer to savings")
+    end
+  end
+
+  puts "Seeded demo data: #{demo_user.accounts.count} accounts, #{demo_user.categories.count} " \
+       "categories, #{demo_user.transactions.count} transactions."
 end
 
 # Personal login, opt-in via env vars set in the Render dashboard (there's no self-serve
