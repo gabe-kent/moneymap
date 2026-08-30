@@ -1,0 +1,38 @@
+<%= form_with model: transfer, url: transfer.persisted? ? transfer_path(transfer.id) : transfers_path, method: transfer.persisted? ? :patch : :post, class: "w-full max-w-md" do |form| %>
+  <% if transfer.errors.any? %>
+    <div class="alert alert-error mb-5">
+      <ul>
+        <% transfer.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= form.label :from_account_id, "From account", class: "label" %>
+    <%= form.select :from_account_id, Current.user.accounts.order(:name).map { |a| [ a.name, a.id ] }, { prompt: "Select an account" }, { required: true, class: "select select-bordered w-full" } %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :to_account_id, "To account", class: "label" %>
+    <%= form.select :to_account_id, Current.user.accounts.order(:name).map { |a| [ a.name, a.id ] }, { prompt: "Select an account" }, { required: true, class: "select select-bordered w-full" } %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :amount, class: "label" %>
+    <%= form.number_field :amount, step: "0.01", min: "0", class: "input input-bordered w-full" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :occurred_on, "Date", class: "label" %>
+    <%= form.date_field :occurred_on, required: true, class: "input input-bordered w-full" %>
+  </div>
+
+  <div class="mb-6">
+    <%= form.label :description, class: "label" %>
+    <%= form.text_field :description, class: "input input-bordered w-full" %>
+  </div>
+
+  <%= form.submit class: "btn btn-primary" %>
+<% end %>
