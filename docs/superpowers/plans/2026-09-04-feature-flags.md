@@ -486,9 +486,9 @@ it. No screen is gated behind a flag in this plan — see the spec's "Decisions"
       @non_admin = users(:two)
     end
 
-    test "index is not found when signed out" do
+    test "index redirects to sign in when signed out" do
       get admin_feature_flags_path
-      assert_response :not_found
+      assert_redirected_to new_session_path
     end
 
     test "index is not found for a signed-in non-admin" do
@@ -716,7 +716,9 @@ it. No screen is gated behind a flag in this plan — see the spec's "Decisions"
 
 - [ ] **Step 8: Rubocop**
 
-  Run: `bin/rubocop config/routes.rb app/controllers/admin app/views/layouts/application.html.erb test/controllers/admin`
+  Run: `bin/rubocop config/routes.rb app/controllers/admin test/controllers/admin` (rubocop can't
+  parse `.erb` files passed directly — run a plain `bin/rubocop` with no args to cover the layout
+  change too).
   Expected: `no offenses detected`.
 
 - [ ] **Step 9: Manual browser check**

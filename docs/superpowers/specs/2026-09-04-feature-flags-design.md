@@ -121,7 +121,8 @@ call sites read naturally: `FeatureFlag.enabled?(:budgets, user: Current.user)`.
   unassigned/nil user → false.
 - `test/controllers/admin/feature_flags_controller_test.rb`,
   `test/controllers/admin/feature_flag_assignments_controller_test.rb` — admin-only (404 for a
-  signed-in non-admin and for a signed-out request), toggle/grant/revoke happy paths.
+  signed-in non-admin; a signed-out request redirects to sign-in first, same as every other route
+  — `require_authentication` runs before `require_admin`), toggle/grant/revoke happy paths.
 - No system test — matches CLAUDE.md (system tests aren't part of `bin/ci` by default). Manual
   `bin/dev` check of the admin page instead.
 

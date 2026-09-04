@@ -7,6 +7,12 @@ Rails.application.routes.draw do
   resources :categories, except: :show
   resources :transactions, except: :show
   resources :transfers, only: %i[ new create edit update destroy ]
+
+  namespace :admin do
+    resources :feature_flags, only: %i[ index update ] do
+      resources :feature_flag_assignments, only: %i[ create destroy ], as: :assignments
+    end
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
