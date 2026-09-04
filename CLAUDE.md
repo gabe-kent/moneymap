@@ -65,6 +65,11 @@ exists today. The **Conventions** below are the subset of that plan already adop
   Blueprint creation and secret setup are manual steps not yet done — see
   `docs/staging-environment-setup.md` for the full walkthrough. Don't assume a staging URL exists
   until this note is updated to say it's live.
+- **`docs/production-launch-tbd.md`** collects the costs and security/auth hardening still open
+  before this is a real product with real users — a private GitHub repo, paid Render plans, a
+  Claude Code plan that covers cloud sessions, no sign-up flow yet, no 2FA, no CSP, no Postgres
+  backups, and more. Not a to-do list to execute now — a reference for when "real users" stops
+  being hypothetical.
 
 ## Development workflow
 
@@ -198,10 +203,18 @@ Queue back into its own `type: worker` service in `render.yaml`.
   `FeatureFlag.enabled?(:key, user: Current.user)` (logic lives in
   `app/services/feature_flag_check.rb`; global enablement always wins over a per-user override).
   To add a new flag: add its key to `FeatureFlag::REGISTRY` in `app/models/feature_flag.rb`, then
-  either toggle it at `/admin/feature_flags` (creates its row automatically) or in Rails console
-  (`FeatureFlag.create!(key: "...")`) — takes effect immediately, no deploy. The admin UI itself
-  is gated by `User#admin` (boolean column, no self-serve grant path — promote via console:
-  `User.find_by(email_address: "...").update!(admin: true)`).
+  visit `/admin/feature_flags` (creates its row automatically) to toggle it globally or grant it
+  to specific users by email — takes effect immediately, no deploy. The admin UI itself is gated
+  by `User#admin` (boolean column). **Granting `admin` differs by environment** — there's no
+  self-serve UI for it, and Render's free plan has no SSH/console access, so
+  `User.find_by(...).update!(admin: true)` in a Rails console only works in local dev. In
+  production, `db/seeds.rb`'s existing `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` env-var login
+  (already used for the founder's personal, non-self-serve account) is also the admin bootstrap:
+  it grants that one user `admin: true` on every boot, since `db:seed` reruns on every deploy
+  (`bin/docker-entrypoint`). No other production user can become admin without either changing
+  those env vars or a future self-serve grant path. See
+  `docs/agentic-development-lifecycle.md`'s "Large or risky changes" section for *when* to reach
+  for a flag, not just how.
   The registry currently holds three keys, each gating one page via `gate_behind` (the
   `FeatureGated` concern): `dashboard` → `/dashboard`, `budgets` → `/budgets`, `reports` →
   `/reports`. A gated page responds **404** rather than redirecting, matching how
@@ -211,5 +224,45 @@ Queue back into its own `type: worker` service in `render.yaml`.
   delegates to `FeatureFlagCheck`.
   **`db/seeds.rb` enables all three in development only.** That guard is deliberate: seeds run on
   every production container boot, so enabling them there would make the gates decorative and
-  ship the pages on first deploy. In tests, flags are off unless a test opts in via
-  `enable_feature` / `enable_feature_for` (`test/test_helpers/feature_flag_test_helper.rb`).
+  ship the pages on first deploy — exactly the property the flag exists to provide. In tests,
+  flags are off unless a test opts in via `enable_feature` / `enable_feature_for`
+  (`test/test_helpers/feature_flag_test_helper.rb`).
+
+### Security — don't reintroduce gaps `docs/production-launch-tbd.md` already tracks
+
+That doc lists what's *currently* open (no sign-up flow, no CSP, no 2FA, etc.) as a backlog, not
+an excuse to add more of the same going forward. New code should default to closing these
+categories of gap, not adding to them:
+
+- **New sensitive/financial/PII columns use Rails' built-in `encrypts`** by default (see the
+  [Active Record Encryption guide](https://guides.rubyonrails.org/active_record_encryption.html)),
+  unless there's a specific reason not to (e.g. needing to query or aggregate on the column
+  un-encrypted). Don't wait for a dedicated "add encryption" pass later — add it when the
+  migration is written, same as choosing `money-rails` for a new money column isn't optional.
+- **New user-input fields get an explicit length/format validation.** Rails defaults aren't
+  enough on their own — `has_secure_password`'s own validations cover presence and confirmation
+  match, not a minimum length, which is exactly how `User` ended up accepting a 1-character
+  password. Don't assume a gem's default validations are complete; check.
+- **Credential checks always go through `authenticate_by`** (already the pattern in
+  `SessionsController`), never a plain `find_by(...).try(:authenticate)` — the former is
+  specifically written to avoid the timing difference that would otherwise leak whether an email
+  address exists in the system.
+- **New sensitive/abusable endpoints get throttled like the existing ones.** Any new endpoint
+  that accepts credentials, sends email, or otherwise invites abuse (a future sign-up form,
+  invites, etc.) should get the same `rack-attack` + Rails 8 `rate_limit` treatment
+  `config/initializers/rack_attack.rb` already applies to login and password reset — don't ship a
+  new attackable endpoint without it.
+- **Never pass raw user input to `redirect_to`.** Only known-safe/internal paths. Rails 8's own
+  open-redirect protection (`ActionController::Redirecting::UnsafeRedirectError`) catches some of
+  this automatically, but treat it as a backstop, not the actual control.
+- **Money-moving actions (transfers, and anything like them later) should consider step-up
+  re-confirmation, not just "is logged in."** Not implemented today, but worth designing for as
+  `Transfers` and similar features grow — OWASP's [ASVS](https://owasp.org/www-project-application-security-verification-standard/)
+  calls this out explicitly for financial applications (segregation of duties / adaptive
+  authentication for high-value actions), and it's a much smaller lift to design in from the
+  start than to retrofit once several transfer-like features exist.
+- **New third-party service credentials (SMTP, error monitoring, Plaid, etc.) go through Rails
+  encrypted credentials or a Render secret env var (`sync: false`)** — never hardcoded, never
+  committed. Same handling `RAILS_MASTER_KEY` already gets in `render.yaml`.
+- Update `docs/production-launch-tbd.md` as items get closed, rather than letting it silently go
+  stale — it's only useful as a reference if it still reflects reality.
