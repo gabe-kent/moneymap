@@ -52,12 +52,44 @@ possible) once whatever's on staging has been QA'd and is ready for real users. 
 regularly — letting `staging` drift weeks ahead of `main` with unpromoted changes defeats the
 point of having the two.
 
+**A promotion PR is kept open for you automatically.** `.github/workflows/promote-staging.yml`
+runs on every push to `staging` and, whenever `staging` has commits `main` doesn't, makes sure a
+`staging -> main` PR is open — creating one if none exists, leaving an existing one alone (GitHub
+keeps its diff live as `staging` keeps moving), and closing it if the branches end up back in
+sync some other way (e.g. a direct fast-forward). It's plain `git`/`gh` bookkeeping with no
+tests, build, or AI calls — a few seconds of Actions time, nothing more — so promoting is always
+"review this standing PR and merge it," never "remember to go create one." Merge it as a plain
+merge, not squash, so `main`'s history matches what `staging` was actually running.
+
+⚠️ **One-time repo setting this depends on:** the workflow authenticates as the built-in Actions
+bot, which needs **Settings → Actions → General → Workflow permissions → "Allow GitHub Actions
+to create and approve pull requests"** enabled — many repos default this off. If the workflow
+run shows a permissions error instead of opening the PR, this is the first thing to check.
+
 ### Exception: hotfixes
 
 A bug actively breaking production shouldn't wait for a staging round-trip. For that case only:
 PR straight against `main`, merge, deploy, then immediately back-merge (or cherry-pick) the fix
 into `staging` so the two don't diverge. This is the only sanctioned path that skips staging —
 everything else goes through it.
+
+## Every PR summarizes its own QA
+
+`.github/pull_request_template.md` gives every new PR a **QA** section with two parts, so the
+person QA-ing the staging deploy knows what's already been checked versus what still needs a
+human to click through it:
+
+- **Automated** — what ran and passed (typically `bin/ci`, or specific commands if the full
+  suite wasn't run). This is a fact, not a plan — only fill it in with things that actually ran.
+- **Manual QA on staging** — a short, concrete, PR-specific checklist of what to click through
+  once the PR is live on moneymap-staging. Not a generic "test the app" — call out exactly what
+  changed and how to see it (e.g. "confirm the new KPI card shows the right numbers," not "check
+  the dashboard"). A doc/test-only PR skips this section entirely, since it targets `main`
+  directly and there's no staging deploy to check.
+
+This turns "you QA it" in the diagram above from an open-ended request into a checklist someone
+can actually follow — including whoever wrote the PR, if they want to self-check before asking
+for a look.
 
 ## Reporting bugs, feature requests, and deferred items
 
@@ -90,6 +122,9 @@ GitHub Issues — but that's not needed today, so it isn't set up.
 
 - Default PR base branch is `staging`, not `main`, unless you're doing a sanctioned hotfix (see
   above) or the user explicitly says otherwise.
+- Fill in the PR template's QA section with a real, PR-specific manual-QA checklist — not a
+  placeholder or a generic "test the app" line. If you ran `bin/ci` (or equivalent) yourself,
+  say so under **Automated**.
 - `.claude/skills/plan-and-build/SKILL.md`'s "finish the branch" step follows this doc.
 - The `check-specs` command doesn't currently specify a base branch, so `gh pr create` without
   `--base` there defaults to this repo's actual default branch (`main`). Until that command is
