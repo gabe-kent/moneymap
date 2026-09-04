@@ -109,6 +109,36 @@ if demo_user.accounts.none?
        "categories, #{demo_user.transactions.count} transactions."
 end
 
+# Monthly budget targets for the demo user, covering the same three months the
+# transactions above span, so the Budgets page has a spread of on-track / watch /
+# over-budget cards rather than being empty. Gated on "no budgets yet" for the
+# same reason as the block above.
+if demo_user.budgets.none?
+  targets = {
+    "Rent" => 150_000,
+    "Groceries" => 38_000,
+    "Dining Out" => 25_000,
+    "Transportation" => 22_000,
+    "Utilities" => 17_500,
+    "Entertainment" => 9_000
+  }
+
+  ActiveRecord::Base.transaction do
+    months = [ 2, 1, 0 ].map { |n| (Date.current << n).beginning_of_month }
+
+    targets.each do |category_name, target_cents|
+      category = demo_user.categories.find_by(name: category_name)
+      next if category.nil?
+
+      months.each do |month|
+        demo_user.budgets.create!(category: category, month: month, target_cents: target_cents)
+      end
+    end
+  end
+
+  puts "Seeded #{demo_user.budgets.count} budgets."
+end
+
 # Personal login, opt-in via env vars set in the Render dashboard (there's no self-serve
 # sign-up yet, and SSH/console access isn't available on the free plan). Only sets the
 # password on creation, so re-running this after changing SEED_ADMIN_PASSWORD won't

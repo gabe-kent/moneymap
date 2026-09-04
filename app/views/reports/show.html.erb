@@ -1,0 +1,99 @@
+<% content_for :title, "Reports · Moneymap" %>
+<% report = @report %>
+
+<%= render layout: "shared/page_header",
+      locals: { title: "Reports", subtitle: report.range_label } do %><% end %>
+
+<%# ---- Net worth trend --------------------------------------------------- %>
+<div class="<%= panel_classes("p-6") %>">
+  <div class="flex justify-between items-center mb-2">
+    <div class="<%= section_heading_classes %>">Net worth trend</div>
+    <div class="text-xl font-black text-invoca-green"><%= money_amount(report.net_worth) %></div>
+  </div>
+
+  <svg viewBox="0 0 600 200" class="w-full h-[200px] block" role="img"
+       aria-label="Net worth over <%= report.range_label %>">
+    <% [ 20, 95, 170 ].each do |y| %>
+      <line x1="40" y1="<%= y %>" x2="580" y2="<%= y %>" stroke="#DDE1DF" stroke-dasharray="4 4"></line>
+    <% end %>
+    <polygon points="<%= report.area_points %>" fill="#D1FFD1" opacity="0.6"></polygon>
+    <polyline points="<%= report.line_points %>" fill="none" stroke="#00B388" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <% report.net_worth_points.each do |point| %>
+      <circle cx="<%= point.x %>" cy="<%= point.y %>" r="4.5" fill="#FFFFFF" stroke="#00B388" stroke-width="2.5">
+        <title><%= point.label %>: <%= money_amount(point.value) %></title>
+      </circle>
+    <% end %>
+  </svg>
+
+  <div class="flex justify-between px-10 mt-1">
+    <% report.net_worth_points.each do |point| %>
+      <span class="text-xs font-semibold text-gray-500"><%= point.label %></span>
+    <% end %>
+  </div>
+</div>
+
+<%# ---- Income vs expenses + category breakdown --------------------------- %>
+<div class="flex gap-5 items-stretch">
+  <div class="<%= panel_classes("flex-1 p-6") %>">
+    <div class="<%= section_heading_classes %> mb-5">Income vs. expenses</div>
+    <div class="flex justify-around items-end h-[190px]">
+      <% report.cash_flow.each do |bar| %>
+        <div class="flex flex-col items-center gap-2.5 flex-1">
+          <div class="flex items-end gap-2 h-[160px]">
+            <div class="w-[26px] bg-invoca-green rounded-t-md" style="height: <%= bar.income_height %>px"
+                 title="Income: <%= money_amount(bar.income) %>"></div>
+            <div class="w-[26px] bg-gray-300 rounded-t-md" style="height: <%= bar.expense_height %>px"
+                 title="Expenses: <%= money_amount(bar.expense) %>"></div>
+          </div>
+          <span class="text-xs font-semibold text-gray-500"><%= bar.label %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="<%= panel_classes("flex-1 p-6") %>">
+    <div class="<%= section_heading_classes %> mb-[18px]">Spending breakdown · <%= report.analysis_month.strftime("%B") %></div>
+    <% if report.breakdown.empty? %>
+      <p class="text-sm text-gray-500">No categorised spending in <%= report.analysis_month.strftime("%B") %>.</p>
+    <% else %>
+      <div class="flex flex-col gap-3">
+        <% report.breakdown.each do |row| %>
+          <div>
+            <div class="flex justify-between gap-3 text-[13px] mb-1">
+              <span class="text-gray-800 truncate"><%= row.name %></span>
+              <span class="font-semibold text-green-black whitespace-nowrap"><%= money_amount(row.amount) %></span>
+            </div>
+            <div class="h-[7px] rounded-full bg-gray-100 overflow-hidden">
+              <div class="h-full rounded-full" style="width: <%= row.bar_width %>%; background-color: <%= row.hex %>"></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# ---- Top spending sources ---------------------------------------------- %>
+<div class="<%= panel_classes("overflow-hidden") %>">
+  <div class="py-[18px] px-6 <%= section_heading_classes %> border-b border-gray-200">Top spending sources</div>
+
+  <% if report.top_sources.empty? %>
+    <p class="py-14 px-6 text-sm text-gray-500 text-center">No spending recorded in this range.</p>
+  <% else %>
+    <div class="grid grid-cols-[1fr_150px_100px_130px] py-2.5 px-6 border-b border-gray-200 <%= eyebrow_classes %>">
+      <span>Description</span><span>Category</span><span>Count</span><span class="text-right">Total</span>
+    </div>
+    <% report.top_sources.each do |row| %>
+      <div class="grid grid-cols-[1fr_150px_100px_130px] py-3.5 px-6 items-center border-b border-gray-200 last:border-b-0">
+        <span class="text-sm font-medium text-green-black truncate pr-3"><%= row.description %></span>
+        <span class="flex items-center gap-1.5 text-[13px] text-gray-500 min-w-0">
+          <%= category_dot row.category, size: "size-[7px]" %>
+          <span class="truncate"><%= row.category&.name || "Uncategorised" %></span>
+        </span>
+        <span class="text-[13px] text-gray-500"><%= row.count %>×</span>
+        <span class="text-right text-sm font-semibold text-green-black"><%= money_amount(row.total) %></span>
+      </div>
+    <% end %>
+  <% end %>
+</div>

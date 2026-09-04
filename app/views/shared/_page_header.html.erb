@@ -1,0 +1,9 @@
+<div class="flex justify-between items-end gap-5">
+  <div>
+    <h1 class="text-[32px] font-black tracking-[-0.01em] text-green-black leading-tight"><%= title %></h1>
+    <% if local_assigns[:subtitle].present? %>
+      <p class="mt-1 text-sm text-gray-500"><%= subtitle %></p>
+    <% end %>
+  </div>
+  <%= yield %>
+</div>

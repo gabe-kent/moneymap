@@ -18,11 +18,11 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, other_category.name
   end
 
-  test "index renders the category's color as a literal Tailwind class" do
+  test "index renders the category's swatch in its own colour" do
     get categories_path
 
     assert_response :success
-    assert_includes response.body, "bg-orange-500"
+    assert_includes response.body, Category::COLOR_HEX.fetch("orange")
   end
 
   test "new renders the form" do

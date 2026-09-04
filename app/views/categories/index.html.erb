@@ -1,32 +1,38 @@
-<div class="w-full">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-4xl font-bold">Categories</h1>
-    <%= link_to "New Category", new_category_path, class: "btn btn-primary" %>
+<% content_for :title, "Categories · Moneymap" %>
+
+<%= render layout: "shared/page_header",
+      locals: { title: "Categories", subtitle: "How spending and income are grouped across the app." } do %>
+  <%= link_to new_category_path, class: primary_button_classes do %>
+    <%= icon "circle-plus", class: "size-4" %>
+    New category
+  <% end %>
+<% end %>
+
+<div class="<%= panel_classes("overflow-hidden") %>">
+  <div class="grid grid-cols-[1fr_140px_92px] py-3 px-5 border-b border-gray-200 <%= eyebrow_classes %>">
+    <span>Name</span><span>Kind</span><span class="sr-only">Actions</span>
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="table">
-      <thead>
-        <tr>
-          <th></th>
-          <th>Name</th>
-          <th>Kind</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @categories.each do |category| %>
-          <tr>
-            <td><span class="inline-block size-4 rounded-full <%= category_color_classes(category.color) %>"></span></td>
-            <td><%= category.name %></td>
-            <td><%= category.kind.titleize %></td>
-            <td class="text-right">
-              <%= link_to "Edit", edit_category_path(category), class: "btn btn-sm btn-ghost" %>
-              <%= button_to "Delete", category_path(category), method: :delete, data: { turbo_confirm: "Delete #{category.name}?" }, class: "btn btn-sm btn-ghost text-error" %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+  <% if @categories.empty? %>
+    <p class="py-14 px-5 text-sm text-gray-500 text-center">No categories yet.</p>
+  <% else %>
+    <% @categories.each do |category| %>
+      <div class="grid grid-cols-[1fr_140px_92px] py-3.5 px-5 items-center border-b border-gray-200 last:border-b-0 hover:bg-gray-50 group">
+        <span class="flex items-center gap-2.5 min-w-0">
+          <%= category_dot category %>
+          <span class="text-sm font-medium text-green-black truncate"><%= category.name %></span>
+        </span>
+        <span class="text-[13px] text-gray-500"><%= category.kind.titleize %></span>
+        <span class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <%= link_to edit_category_path(category), class: "p-1.5 rounded-lg text-gray-500 hover:text-green-black hover:bg-gray-100", title: "Edit", aria: { label: "Edit category" } do %>
+            <%= icon "pencil", class: "size-4" %>
+          <% end %>
+          <%= button_to category_path(category), method: :delete, data: { turbo_confirm: "Delete #{category.name}?" },
+                class: "p-1.5 rounded-lg text-gray-500 hover:text-problem-red hover:bg-problem-salmon cursor-pointer", title: "Delete", aria: { label: "Delete category" } do %>
+            <%= icon "trash-2", class: "size-4" %>
+          <% end %>
+        </span>
+      </div>
+    <% end %>
+  <% end %>
 </div>

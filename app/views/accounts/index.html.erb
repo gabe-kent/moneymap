@@ -1,32 +1,43 @@
-<div class="w-full">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-4xl font-bold">Accounts</h1>
-    <%= link_to "New Account", new_account_path, class: "btn btn-primary" %>
-  </div>
+<% content_for :title, "Accounts · Moneymap" %>
 
-  <div class="overflow-x-auto">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Kind</th>
-          <th>Balance</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @accounts.each do |account| %>
-          <tr>
-            <td><%= account.name %></td>
-            <td><%= account.kind.titleize %></td>
-            <td><%= humanized_money_with_symbol account.current_balance %></td>
-            <td class="text-right">
-              <%= link_to "Edit", edit_account_path(account), class: "btn btn-sm btn-ghost" %>
-              <%= button_to "Delete", account_path(account), method: :delete, data: { turbo_confirm: "Delete #{account.name}?" }, class: "btn btn-sm btn-ghost text-error" %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+<%= render layout: "shared/page_header",
+      locals: { title: "Accounts", subtitle: "Opening balances plus everything recorded since." } do %>
+  <%= link_to new_account_path, class: primary_button_classes do %>
+    <%= icon "circle-plus", class: "size-4" %>
+    New account
+  <% end %>
+<% end %>
+
+<% if @accounts.empty? %>
+  <%= render "shared/empty_state",
+        icon: "landmark",
+        title: "No accounts yet",
+        body: "Accounts are where transactions live. Add your checking account to get started.",
+        action_label: "Add an account",
+        action_path: new_account_path %>
+<% else %>
+  <div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-[18px]">
+    <% @accounts.each do |account| %>
+      <% balance = account.current_balance %>
+      <div class="<%= panel_classes("p-5 group") %>">
+        <div class="flex items-center gap-2.5">
+          <span class="size-[30px] rounded-lg bg-mint flex items-center justify-center shrink-0">
+            <%= icon account.icon_name, class: "size-3.5 text-deep-green" %>
+          </span>
+          <span class="<%= eyebrow_classes %>"><%= account.kind.titleize %></span>
+          <span class="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <%= link_to edit_account_path(account), class: "p-1 rounded-md text-gray-400 hover:text-green-black hover:bg-gray-100", title: "Edit", aria: { label: "Edit account" } do %>
+              <%= icon "pencil", class: "size-3.5" %>
+            <% end %>
+            <%= button_to account_path(account), method: :delete, data: { turbo_confirm: "Delete #{account.name}?" },
+                  class: "p-1 rounded-md text-gray-400 hover:text-problem-red hover:bg-problem-salmon cursor-pointer", title: "Delete", aria: { label: "Delete account" } do %>
+              <%= icon "trash-2", class: "size-3.5" %>
+            <% end %>
+          </span>
+        </div>
+        <div class="mt-3.5 text-[22px] font-black <%= account_balance_class(balance) %>"><%= money_amount(balance) %></div>
+        <div class="mt-0.5 text-[13px] text-gray-500 truncate"><%= account.name %></div>
+      </div>
+    <% end %>
   </div>
-</div>
+<% end %>

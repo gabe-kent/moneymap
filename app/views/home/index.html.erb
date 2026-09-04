@@ -1,10 +1,9 @@
-<div class="card bg-base-100 shadow-sm w-full">
-  <div class="card-body">
-    <h1 class="card-title text-4xl">Welcome to Moneymap</h1>
-    <% if authenticated? %>
-      <p>Signed in as <%= Current.user.email_address %>.</p>
-    <% else %>
-      <p><%= link_to "Sign in", new_session_path, class: "link" %> to get started.</p>
-    <% end %>
-  </div>
+<% content_for :title, "Moneymap" %>
+
+<%# Only reached while signed out — HomeController redirects to the dashboard
+    otherwise. %>
+<div class="<%= panel_classes("p-8 text-center flex flex-col gap-3") %>">
+  <h1 class="text-2xl font-black tracking-[-0.02em] text-green-black">See where your money goes</h1>
+  <p class="text-sm text-gray-500">Track accounts, categorise spending, set budgets and watch your net worth move.</p>
+  <%= link_to "Sign in", new_session_path, class: "#{primary_button_classes} justify-center mt-2" %>
 </div>

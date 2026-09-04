@@ -1,0 +1,42 @@
+<%# 240px persistent nav. `current` marks the active row by controller so that
+    a nested page (editing a budget, say) keeps its section highlighted. %>
+<% nav = [
+     { label: "Dashboard",    path: dashboard_path,    icon: "house",        controllers: %w[ dashboard home ] },
+     { label: "Transactions", path: transactions_path, icon: "receipt",      controllers: %w[ transactions transfers ] },
+     { label: "Budgets",      path: budgets_path,      icon: "wallet",       controllers: %w[ budgets ] },
+     { label: "Reports",      path: reports_path,      icon: "chart-column", controllers: %w[ reports ] }
+   ]
+   manage = [
+     { label: "Accounts",   path: accounts_path,   icon: "landmark", controllers: %w[ accounts ] },
+     { label: "Categories", path: categories_path, icon: "layers",   controllers: %w[ categories ] }
+   ] %>
+
+<aside class="w-60 shrink-0 bg-white border-r border-gray-200 py-6 px-4 flex flex-col gap-7">
+  <%= render "shared/brand" %>
+
+  <nav class="flex flex-col gap-0.5">
+    <% nav.each do |item| %>
+      <%= render "shared/nav_item", item: item %>
+    <% end %>
+  </nav>
+
+  <div class="flex flex-col gap-0.5">
+    <span class="<%= eyebrow_classes %> px-3 pb-1.5">Manage</span>
+    <% manage.each do |item| %>
+      <%= render "shared/nav_item", item: item %>
+    <% end %>
+  </div>
+
+  <div class="mt-auto flex items-center gap-2.5 py-3 px-2 border-t border-gray-200">
+    <span class="size-8 rounded-full bg-mint flex items-center justify-center font-bold text-deep-green text-[13px] shrink-0">
+      <%= Current.user.email_address.first.upcase %>
+    </span>
+    <span class="flex flex-col leading-tight min-w-0">
+      <span class="text-[13px] font-semibold text-green-black truncate"><%= Current.user.email_address.split("@").first.titleize %></span>
+      <span class="text-[11px] text-gray-500">Personal · USD</span>
+    </span>
+    <%= button_to session_path, method: :delete, class: "ml-auto text-gray-500 hover:text-green-black cursor-pointer", title: "Sign out", aria: { label: "Sign out" } do %>
+      <%= icon "log-out", class: "size-4" %>
+    <% end %>
+  </div>
+</aside>

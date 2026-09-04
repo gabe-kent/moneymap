@@ -1,0 +1,3 @@
+<% content_for :title, "New budget · Moneymap" %>
+<%= render layout: "shared/page_header", locals: { title: "New budget", subtitle: "Set a monthly spending target for one category." } do %><% end %>
+<div class="<%= panel_classes("p-6") %>"><%= render "form", budget: @budget %></div>

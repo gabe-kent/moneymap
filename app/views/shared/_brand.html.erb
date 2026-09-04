@@ -1,0 +1,8 @@
+<%# The logo lockup: the brand's rounded-square mark plus the wordmark. %>
+<% size = local_assigns.fetch(:size, :default) %>
+<%= link_to root_path, class: "flex items-center gap-2.5 #{size == :large ? '' : 'px-2'}" do %>
+  <span class="<%= size == :large ? 'size-11' : 'size-8' %> rounded-brand bg-invoca-green flex items-center justify-center shrink-0">
+    <%= icon "map", class: "#{size == :large ? 'size-6' : 'size-[18px]'} text-white" %>
+  </span>
+  <span class="font-black <%= size == :large ? 'text-2xl' : 'text-lg' %> tracking-[-0.02em] text-green-black">moneymap</span>
+<% end %>

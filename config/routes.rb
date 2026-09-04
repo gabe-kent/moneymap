@@ -1,11 +1,14 @@
 Rails.application.routes.draw do
   mount RailsIcons::Engine, at: "/rails_icons"
   get "home/index"
+  get "dashboard" => "dashboard#show", as: :dashboard
+  get "reports" => "reports#show", as: :reports
   resource :session
   resources :passwords, param: :token
   resources :accounts, except: :show
   resources :categories, except: :show
   resources :transactions, except: :show
+  resources :budgets, except: :show
   resources :transfers, only: %i[ new create edit update destroy ]
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
