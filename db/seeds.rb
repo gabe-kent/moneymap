@@ -109,6 +109,49 @@ if demo_user.accounts.none?
        "categories, #{demo_user.transactions.count} transactions."
 end
 
+# Monthly budget targets for the demo user, covering the same three months the
+# transactions above span, so the Budgets page has a spread of on-track / watch /
+# over-budget cards rather than being empty. Gated on "no budgets yet" for the
+# same reason as the block above.
+if demo_user.budgets.none?
+  targets = {
+    "Rent" => 150_000,
+    "Groceries" => 38_000,
+    "Dining Out" => 25_000,
+    "Transportation" => 22_000,
+    "Utilities" => 17_500,
+    "Entertainment" => 9_000
+  }
+
+  ActiveRecord::Base.transaction do
+    months = [ 2, 1, 0 ].map { |n| (Date.current << n).beginning_of_month }
+
+    targets.each do |category_name, target_cents|
+      category = demo_user.categories.find_by(name: category_name)
+      next if category.nil?
+
+      months.each do |month|
+        demo_user.budgets.create!(category: category, month: month, target_cents: target_cents)
+      end
+    end
+  end
+
+  puts "Seeded #{demo_user.budgets.count} budgets."
+end
+
+# Feature flags for the dashboard/budgets/reports pages, enabled in DEVELOPMENT
+# ONLY. This deliberately does not run in production: seeds execute on every
+# container boot there, so enabling flags here would make the gate decorative and
+# ship the pages to everyone the moment they deploy. Toggle them for real at
+# /admin/feature_flags (takes effect immediately, no deploy).
+if Rails.env.development?
+  FeatureFlag::REGISTRY.each do |key|
+    FeatureFlag.find_or_create_by!(key: key).update!(globally_enabled: true)
+  end
+
+  puts "Enabled #{FeatureFlag.count} feature flags (development only)."
+end
+
 # Personal login, opt-in via env vars set in the Render dashboard (there's no self-serve
 # sign-up yet, and SSH/console access isn't available on the free plan) — also the only way to
 # reach the admin flag UI in production, since that same lack of console access rules out

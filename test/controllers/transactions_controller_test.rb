@@ -33,6 +33,52 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index filters by transaction type" do
+    @user.transactions.create!(account: @account, category: @income_category, amount_cents: 90_000, occurred_on: Date.current, txn_type: "income", description: "Paycheck")
+
+    get transactions_path(type: "income")
+
+    assert_response :success
+    assert_includes response.body, "Paycheck"
+    assert_includes response.body, "1 transaction"
+  end
+
+  test "index filters by category" do
+    @user.transactions.create!(account: @account, category: @income_category, amount_cents: 90_000, occurred_on: Date.current, txn_type: "income", description: "Paycheck")
+
+    get transactions_path(category_id: @income_category.id)
+
+    assert_response :success
+    assert_includes response.body, "Paycheck"
+    assert_includes response.body, "1 transaction"
+  end
+
+  test "index searches descriptions case-insensitively" do
+    @user.transactions.create!(account: @account, category: @category, amount_cents: 2_000, occurred_on: Date.current, txn_type: "expense", description: "Corner Store")
+
+    get transactions_path(q: "corner")
+
+    assert_response :success
+    assert_includes response.body, "Corner Store"
+    assert_includes response.body, "1 transaction"
+  end
+
+  test "index treats search wildcards as literal characters" do
+    @user.transactions.create!(account: @account, category: @category, amount_cents: 2_000, occurred_on: Date.current, txn_type: "expense", description: "Corner Store")
+
+    get transactions_path(q: "%")
+
+    assert_response :success
+    assert_includes response.body, "0 transactions"
+  end
+
+  test "index ignores an unknown type filter" do
+    get transactions_path(type: "bogus")
+
+    assert_response :success
+    assert_includes response.body, "1 transaction"
+  end
+
   test "new renders the form" do
     get new_transaction_path
     assert_response :success

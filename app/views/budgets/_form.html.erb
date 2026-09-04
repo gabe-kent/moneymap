@@ -1,0 +1,41 @@
+<%= form_with model: budget, class: "w-full max-w-md" do |form| %>
+  <% if budget.errors.any? %>
+    <div class="alert alert-error mb-5">
+      <ul>
+        <% budget.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= form.label :category_id, "Category", class: "label" %>
+    <%= form.select :category_id,
+          Current.user.categories.expense.order(:name).map { |c| [ c.name, c.id ] },
+          { prompt: "Select a category" },
+          { required: true, class: "select select-bordered w-full" } %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :month, class: "label" %>
+    <%# A fixed list of month starts, so there's no ambiguity about which day of
+        the month a budget is anchored to. %>
+    <%= form.select :month,
+          (-6..6).map { |offset| (Date.current >> offset).beginning_of_month }.map { |m| [ m.strftime("%B %Y"), m.to_fs(:db) ] },
+          { selected: (budget.month || Date.current.beginning_of_month).to_fs(:db) },
+          { required: true, class: "select select-bordered w-full" } %>
+  </div>
+
+  <div class="mb-6">
+    <%= form.label :target, "Monthly target", class: "label" %>
+    <%= form.number_field :target, step: "0.01", min: "0.01", required: true,
+          value: budget.target_cents.to_i.positive? ? budget.target.to_s : nil,
+          class: "input input-bordered w-full" %>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <%= form.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", budgets_path(month: budget.month), class: "btn btn-ghost" %>
+  </div>
+<% end %>

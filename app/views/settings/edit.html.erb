@@ -1,86 +1,100 @@
-<div class="w-full max-w-2xl mx-auto flex flex-col gap-6">
-  <h1 class="text-4xl font-bold">Settings</h1>
+<% content_for :title, "Settings · Moneymap" %>
 
-  <div class="card bg-base-100 shadow-sm">
-    <div class="card-body">
-      <h2 class="card-title">Account</h2>
-      <p class="text-sm text-base-content/70">Signed in as <span class="font-medium"><%= @user.email_address %></span></p>
-    </div>
-  </div>
+<%= render layout: "shared/page_header",
+      locals: { title: "Settings", subtitle: "Your sign-in details and where you're signed in." } do %><% end %>
 
-  <div class="card bg-base-100 shadow-sm">
-    <div class="card-body">
-      <h2 class="card-title">Change password</h2>
-
-      <% if @user.errors.any? %>
-        <div class="alert alert-error">
-          <ul>
-            <% @user.errors.full_messages.each do |message| %>
-              <li><%= message %></li>
-            <% end %>
-          </ul>
-        </div>
-      <% end %>
-
-      <%= form_with url: settings_path, method: :patch do |form| %>
-        <div class="mb-4">
-          <%= label_tag :current_password, "Current password", class: "label" %>
-          <%= password_field_tag :current_password, nil, required: true, autocomplete: "current-password", class: "input input-bordered w-full" %>
-        </div>
-
-        <div class="mb-4">
-          <%= form.label :password, "New password", class: "label" %>
-          <%= form.password_field :password, required: true, autocomplete: "new-password", maxlength: 72, class: "input input-bordered w-full" %>
-        </div>
-
-        <div class="mb-6">
-          <%= form.label :password_confirmation, "Confirm new password", class: "label" %>
-          <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", maxlength: 72, class: "input input-bordered w-full" %>
-        </div>
-
-        <%= form.submit "Update password", class: "btn btn-primary" %>
+<div class="w-full max-w-3xl flex flex-col gap-5">
+  <%# ---- Account ------------------------------------------------------- %>
+  <div class="<%= panel_classes("p-6") %>">
+    <div class="<%= eyebrow_classes %>">Signed in as</div>
+    <div class="mt-2 flex items-center gap-2.5">
+      <span class="size-8 rounded-full bg-mint flex items-center justify-center font-bold text-deep-green text-[13px] shrink-0">
+        <%= @user.email_address.first.upcase %>
+      </span>
+      <span class="text-base font-bold text-green-black break-all"><%= @user.email_address %></span>
+      <% if @user.admin? %>
+        <span class="text-[11px] font-semibold py-[3px] px-[9px] rounded-full bg-mint text-invoca-green whitespace-nowrap">Admin</span>
       <% end %>
     </div>
   </div>
 
-  <div class="card bg-base-100 shadow-sm">
-    <div class="card-body">
-      <div class="flex justify-between items-center">
-        <h2 class="card-title">Active sessions</h2>
-        <% if @sessions.size > 1 %>
-          <%= button_to "Sign out of all other sessions", destroy_all_user_sessions_path, method: :delete, data: { turbo_confirm: "Sign out of all other sessions?" }, class: "btn btn-sm btn-ghost text-error" %>
-        <% end %>
+  <%# ---- Change password ------------------------------------------------ %>
+  <div class="<%= panel_classes("p-6") %>">
+    <div class="<%= section_heading_classes %>">Change password</div>
+    <p class="mt-1 text-[13px] text-gray-500">Changing your password doesn't sign out your other sessions — revoke those below.</p>
+
+    <% if @user.errors.any? %>
+      <div class="mt-4 flex gap-2.5 py-3 px-4 rounded-xl bg-problem-salmon text-problem-red text-sm font-semibold">
+        <%= icon "circle-alert", class: "size-4 shrink-0 mt-0.5" %>
+        <ul class="flex flex-col gap-0.5">
+          <% @user.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with url: settings_path, method: :patch, class: "mt-4 flex flex-col gap-4 max-w-sm" do |form| %>
+      <div class="flex flex-col gap-1.5">
+        <%= label_tag :current_password, "Current password", class: "text-[13px] font-semibold text-green-black" %>
+        <%= password_field_tag :current_password, nil, required: true, autocomplete: "current-password",
+              class: "w-full py-2.5 px-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-invoca-green" %>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Device</th>
-              <th>IP address</th>
-              <th>Signed in</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @sessions.each do |session| %>
-              <tr>
-                <td>
-                  <%= session.user_agent.presence || "Unknown device" %>
-                  <% if session == Current.session %>
-                    <span class="badge badge-sm badge-primary ml-2">This session</span>
-                  <% end %>
-                </td>
-                <td><%= session.ip_address.presence || "—" %></td>
-                <td><%= time_ago_in_words(session.created_at) %> ago</td>
-                <td class="text-right">
-                  <%= button_to (session == Current.session ? "Sign out" : "Revoke"), user_session_path(session), method: :delete, data: { turbo_confirm: "Sign out of this session?" }, class: "btn btn-sm btn-ghost text-error" %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+      <div class="flex flex-col gap-1.5">
+        <%= form.label :password, "New password", class: "text-[13px] font-semibold text-green-black" %>
+        <%= form.password_field :password, required: true, autocomplete: "new-password", maxlength: 72,
+              class: "w-full py-2.5 px-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-invoca-green" %>
       </div>
+
+      <div class="flex flex-col gap-1.5">
+        <%= form.label :password_confirmation, "Confirm new password", class: "text-[13px] font-semibold text-green-black" %>
+        <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", maxlength: 72,
+              class: "w-full py-2.5 px-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-invoca-green" %>
+      </div>
+
+      <%= form.submit "Update password", class: "#{primary_button_classes} justify-center mt-1" %>
+    <% end %>
+  </div>
+
+  <%# ---- Active sessions ------------------------------------------------ %>
+  <div class="<%= panel_classes("overflow-hidden") %>">
+    <div class="flex justify-between items-center gap-4 py-[18px] px-6 border-b border-gray-200">
+      <div>
+        <div class="<%= section_heading_classes %>">Active sessions</div>
+        <p class="mt-0.5 text-[13px] text-gray-500"><%= pluralize @sessions.size, "device" %> signed in to this account.</p>
+      </div>
+      <% if @sessions.size > 1 %>
+        <%= button_to "Sign out everywhere else", destroy_all_user_sessions_path, method: :delete,
+              data: { turbo_confirm: "Sign out of all other sessions?" },
+              class: "#{ghost_button_classes} shrink-0 text-problem-red hover:bg-problem-salmon" %>
+      <% end %>
     </div>
+
+    <div class="grid grid-cols-[1fr_150px_130px_110px] py-2.5 px-6 border-b border-gray-200 <%= eyebrow_classes %>">
+      <span>Device</span><span>IP address</span><span>Signed in</span><span class="sr-only">Actions</span>
+    </div>
+
+    <% @sessions.each do |session| %>
+      <% current = session == Current.session %>
+      <div class="grid grid-cols-[1fr_150px_130px_110px] py-3.5 px-6 items-center gap-3 border-b border-gray-200 last:border-b-0">
+        <span class="flex items-center gap-2 min-w-0">
+          <%= icon "monitor-smartphone", class: "size-4 shrink-0 text-gray-500" %>
+          <span class="text-sm font-medium text-green-black truncate" title="<%= session.user_agent %>">
+            <%= session.user_agent.presence || "Unknown device" %>
+          </span>
+          <% if current %>
+            <span class="text-[11px] font-semibold py-[3px] px-[9px] rounded-full bg-mint text-invoca-green whitespace-nowrap shrink-0">This device</span>
+          <% end %>
+        </span>
+        <span class="text-[13px] text-gray-500 tabular-nums truncate"><%= session.ip_address.presence || "—" %></span>
+        <span class="text-[13px] text-gray-500"><%= time_ago_in_words(session.created_at) %> ago</span>
+        <span class="flex justify-end">
+          <%= button_to (current ? "Sign out" : "Revoke"), user_session_path(session), method: :delete,
+                data: { turbo_confirm: current ? "Sign out of this device?" : "Revoke this session?" },
+                class: "py-1.5 px-3 rounded-lg text-[13px] font-semibold text-problem-red hover:bg-problem-salmon cursor-pointer transition-colors" %>
+        </span>
+      </div>
+    <% end %>
   </div>
 </div>

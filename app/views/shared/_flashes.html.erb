@@ -1,0 +1,13 @@
+<% if alert = flash[:alert] %>
+  <div id="alert" class="flex items-center gap-2.5 py-3 px-4 rounded-xl bg-problem-salmon text-problem-red text-sm font-semibold">
+    <%= icon "circle-alert", class: "size-4 shrink-0" %>
+    <%= alert %>
+  </div>
+<% end %>
+
+<% if notice = flash[:notice] %>
+  <div id="notice" class="flex items-center gap-2.5 py-3 px-4 rounded-xl bg-mint text-deep-green text-sm font-semibold">
+    <%= icon "circle-check", class: "size-4 shrink-0" %>
+    <%= notice %>
+  </div>
+<% end %>

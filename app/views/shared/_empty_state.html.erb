@@ -1,0 +1,10 @@
+<div class="<%= panel_classes %> py-14 px-6 flex flex-col items-center text-center gap-3">
+  <span class="size-12 rounded-2xl bg-mint flex items-center justify-center">
+    <%= icon local_assigns.fetch(:icon, "inbox"), class: "size-5 text-deep-green" %>
+  </span>
+  <p class="text-base font-bold text-green-black"><%= title %></p>
+  <p class="text-sm text-gray-500 max-w-sm"><%= body %></p>
+  <% if local_assigns[:action_path].present? %>
+    <%= link_to action_label, action_path, class: "#{primary_button_classes} mt-1" %>
+  <% end %>
+</div>

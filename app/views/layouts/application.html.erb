@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="invoca">
   <head>
     <title><%= content_for(:title) || "Moneymap" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -18,60 +18,37 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
+    <%# Inter is the Invoca brand's chosen web face (it stands in for GT America).
+        Loaded from Google Fonts; the stack in the Tailwind theme falls back to
+        the system sans if it can't be fetched. %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <div class="navbar bg-base-100 shadow-sm px-5">
-      <div class="flex-1">
-        <%= link_to root_path, class: "btn btn-ghost text-xl gap-2" do %>
-          <%= icon "landmark", class: "size-5" %>
-          Moneymap
-        <% end %>
+  <body class="font-sans text-gray-800 antialiased">
+    <% if authenticated? %>
+      <div class="flex min-h-screen bg-sand">
+        <%= render "shared/sidebar" %>
+
+        <main class="flex-1 min-w-0 pt-8 px-10 pb-14 flex flex-col gap-7">
+          <%= render "shared/flashes" %>
+          <%= yield %>
+        </main>
       </div>
-      <% if authenticated? %>
-        <div class="flex-none">
-          <%= link_to "Accounts", accounts_path, class: "btn btn-ghost" %>
-          <%= link_to "Categories", categories_path, class: "btn btn-ghost" %>
-          <%= link_to "Transactions", transactions_path, class: "btn btn-ghost" %>
-          <% if Current.user&.admin? %>
-            <%= link_to "Admin", admin_feature_flags_path, class: "btn btn-ghost" %>
-          <% end %>
+    <% else %>
+      <div class="min-h-screen bg-sand flex flex-col items-center justify-center gap-6 py-16 px-5">
+        <%= render "shared/brand", size: :large %>
 
-          <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-ghost">
-              <%= icon "circle-user", class: "size-5" %>
-              <%= Current.user.email_address %>
-            </div>
-            <div tabindex="0" class="dropdown-content bg-base-100 rounded-box z-10 w-52 p-2 shadow-sm flex flex-col gap-1">
-              <%= link_to edit_settings_path, class: "btn btn-ghost btn-sm justify-start" do %>
-                <%= icon "settings", class: "size-4" %> Settings
-              <% end %>
-              <%= button_to session_path, method: :delete, class: "btn btn-ghost btn-sm justify-start w-full" do %>
-                <%= icon "log-out", class: "size-4" %> Log out
-              <% end %>
-            </div>
-          </div>
+        <div class="w-full max-w-md flex flex-col gap-4">
+          <%= render "shared/flashes" %>
+          <%= yield %>
         </div>
-      <% end %>
-    </div>
-
-    <main class="container mx-auto mt-12 px-5 flex flex-col gap-5">
-      <% if alert = flash[:alert] %>
-        <div class="alert alert-error" id="alert"><%= alert %></div>
-      <% end %>
-
-      <% if notice = flash[:notice] %>
-        <div class="alert alert-success" id="notice"><%= notice %></div>
-      <% end %>
-
-      <%= yield %>
-    </main>
-
-    <footer class="text-xs text-base-content/50 text-center mt-12 mb-6">
-      Moneymap — built with Rails 8 + DaisyUI
-    </footer>
+      </div>
+    <% end %>
   </body>
 </html>

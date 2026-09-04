@@ -1,36 +1,77 @@
-<div class="w-full">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-4xl font-bold">Transactions</h1>
-    <%= link_to "New Transaction", new_transaction_path, class: "btn btn-primary" %>
+<% content_for :title, "Transactions · Moneymap" %>
+
+<%= render layout: "shared/page_header",
+      locals: { title: "Transactions", subtitle: "Every account, newest first." } do %>
+  <%= link_to new_transaction_path, class: primary_button_classes do %>
+    <%= icon "circle-plus", class: "size-4" %>
+    Add transaction
+  <% end %>
+<% end %>
+
+<%# Search, type and category compose into one GET form. The type buttons are
+    plain submit buttons carrying their own name/value, so the segmented control
+    works with no JavaScript; only the category select needs the auto-submit
+    controller. %>
+<%= form_with url: transactions_path, method: :get, data: { turbo_action: "advance" },
+              class: "flex gap-3 items-center flex-wrap" do |form| %>
+  <div class="relative flex-1 min-w-[220px]">
+    <%= icon "search", class: "absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-500 pointer-events-none" %>
+    <%= form.search_field :q, value: params[:q], placeholder: "Search transactions",
+          class: "w-full py-2.5 pl-[34px] pr-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-invoca-green" %>
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Account</th>
-          <th>Category</th>
-          <th>Description</th>
-          <th>Amount</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @transactions.each do |transaction| %>
-          <tr>
-            <td><%= transaction.occurred_on.to_fs(:long) %></td>
-            <td><%= transaction.account.name %></td>
-            <td><%= transaction.category&.name %></td>
-            <td><%= transaction.description %></td>
-            <td><%= humanized_money_with_symbol transaction.amount %></td>
-            <td class="text-right">
-              <%= link_to "Edit", edit_transaction_path(transaction), class: "btn btn-sm btn-ghost" %>
-              <%= button_to "Delete", transaction_path(transaction), method: :delete, data: { turbo_confirm: "Delete this transaction?" }, class: "btn btn-sm btn-ghost text-error" %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+  <div class="flex bg-white border border-gray-200 rounded-xl p-[3px]">
+    <% [ [ "all", "All" ], *Transaction.txn_types.keys.map { |k| [ k, k.titleize ] } ].each do |value, label| %>
+      <% active = (params[:type].presence || "all") == value %>
+      <%= form.button label, name: "type", value: value, type: "submit",
+            class: class_names("py-[7px] px-3.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors",
+                               active ? "bg-mint text-deep-green" : "text-gray-500 hover:text-green-black") %>
+    <% end %>
+  </div>
+
+  <%= form.select :category_id,
+        @categories.map { |c| [ c.name, c.id ] },
+        { include_blank: "All categories", selected: params[:category_id] },
+        { data: { controller: "auto-submit", action: "change->auto-submit#submit" },
+          class: "py-2.5 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 outline-none focus:border-invoca-green" } %>
+<% end %>
+
+<div class="<%= panel_classes("overflow-hidden") %>">
+  <div class="grid grid-cols-[110px_1fr_150px_150px_120px_92px] py-3 px-5 border-b border-gray-200 <%= eyebrow_classes %>">
+    <span>Date</span>
+    <span>Description</span>
+    <span>Category</span>
+    <span>Account</span>
+    <span class="text-right">Amount</span>
+    <span class="sr-only">Actions</span>
+  </div>
+
+  <% if @transactions.empty? %>
+    <p class="py-14 px-5 text-sm text-gray-500 text-center">No transactions match these filters.</p>
+  <% else %>
+    <% @transactions.each do |transaction| %>
+      <div class="grid grid-cols-[110px_1fr_150px_150px_120px_92px] py-3.5 px-5 items-center border-b border-gray-200 last:border-b-0 hover:bg-gray-50 group">
+        <span class="text-[13px] text-gray-500"><%= transaction.occurred_on.strftime("%b %-d") %></span>
+        <span class="text-sm font-medium text-green-black truncate pr-3"><%= transaction.description.presence || transaction.txn_type.titleize %></span>
+        <span><%= transaction.transfer? ? transfer_chip : category_chip(transaction.category) %></span>
+        <span class="text-[13px] text-gray-500 truncate pr-3"><%= transaction.account.name %></span>
+        <span class="text-right text-sm font-semibold whitespace-nowrap <%= transaction_amount_class(transaction) %>"><%= signed_money_amount(transaction.amount) %></span>
+        <span class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <%= link_to edit_transaction_path(transaction), class: "p-1.5 rounded-lg text-gray-500 hover:text-green-black hover:bg-gray-100", title: "Edit", aria: { label: "Edit transaction" } do %>
+            <%= icon "pencil", class: "size-4" %>
+          <% end %>
+          <%= button_to transaction_path(transaction), method: :delete,
+                data: { turbo_confirm: transaction.transfer? ? "Delete this transfer (both legs)?" : "Delete this transaction?" },
+                class: "p-1.5 rounded-lg text-gray-500 hover:text-problem-red hover:bg-problem-salmon cursor-pointer", title: "Delete", aria: { label: "Delete transaction" } do %>
+            <%= icon "trash-2", class: "size-4" %>
+          <% end %>
+        </span>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="flex justify-between py-3.5 px-5 text-[13px] text-gray-500">
+    <span><%= pluralize @transactions.size, "transaction" %></span>
+    <span>Net: <span class="font-semibold <%= @net.negative? ? "text-problem-red" : "text-green-black" %>"><%= signed_money_amount(@net) %></span></span>
   </div>
 </div>

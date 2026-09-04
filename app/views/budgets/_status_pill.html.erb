@@ -1,0 +1,7 @@
+<% styles = {
+     over: [ "Over budget", "bg-problem-salmon text-problem-red" ],
+     watch: [ "Watch", "bg-gray-100 text-gray-700" ],
+     on_track: [ "On track", "bg-mint text-invoca-green" ]
+   } %>
+<% label, classes = styles.fetch(status) %>
+<span class="text-[11px] font-semibold py-[3px] px-[9px] rounded-full whitespace-nowrap <%= classes %>"><%= label %></span>

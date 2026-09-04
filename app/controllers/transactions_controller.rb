@@ -2,7 +2,9 @@ class TransactionsController < ApplicationController
   before_action :set_transaction, only: %i[ edit update destroy ]
 
   def index
-    @transactions = Current.user.transactions.includes(:account, :category).order(occurred_on: :desc, created_at: :desc)
+    @transactions = filtered_transactions
+    @categories = Current.user.categories.order(:name)
+    @net = Money.new(@transactions.sum(:amount_cents), "USD")
   end
 
   def new
@@ -44,6 +46,20 @@ class TransactionsController < ApplicationController
   end
 
   private
+    # Search / type / category are all optional and compose; a blank or unknown
+    # value for any of them is simply not applied.
+    def filtered_transactions
+      scope = Current.user.transactions.includes(:account, :category).order(occurred_on: :desc, created_at: :desc)
+      scope = scope.where(txn_type: params[:type]) if Transaction.txn_types.key?(params[:type])
+      scope = scope.where(category_id: params[:category_id]) if params[:category_id].present?
+      scope = scope.where("transactions.description ILIKE ?", "%#{sanitize_sql_like(params[:q])}%") if params[:q].present?
+      scope
+    end
+
+    def sanitize_sql_like(value)
+      ActiveRecord::Base.sanitize_sql_like(value.to_s)
+    end
+
     def set_transaction
       @transaction = Current.user.transactions.find(params[:id])
     end

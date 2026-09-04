@@ -1,10 +1,113 @@
 @import "tailwindcss";
 @plugin "./vendor/daisyui.js";
-@plugin "./vendor/daisyui-theme.js" {
-  name: "light";
-  default: true;
+
+/* ---------------------------------------------------------------------------
+   Invoca design system, expressed as Tailwind v4 theme tokens.
+   Ported from the Claude Design handoff bundle (_ds/invoca-design-system/tokens).
+   Utilities generated here (bg-sand, text-invoca-green, rounded-brand, ...) are
+   the vocabulary the app views are written in; the DaisyUI theme below re-points
+   DaisyUI's own component colors at the same palette so pre-existing
+   btn/card/alert markup inherits the brand without being rewritten.
+   --------------------------------------------------------------------------- */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Primary brand */
+  --color-invoca-green: #00B388;
+  --color-green-black: #0A231E;
+
+  /* Core palette */
+  --color-deep-green: #004030;
+  --color-mint: #D1FFD1;
+  --color-sand: #F2F5E4;
+
+  /* Green tint ramp (derived from Invoca Green) */
+  --color-green-50:  #E6F8F2;
+  --color-green-100: #CCF1E5;
+  --color-green-200: #99E3CB;
+  --color-green-300: #66D5B1;
+  --color-green-400: #33C79C;
+  --color-green-500: #00B388;
+  --color-green-600: #009070;
+  --color-green-700: #006E55;
+  --color-green-800: #004030;
+  --color-green-900: #0A231E;
+
+  /* Neutral ramp — green-tinted, per the brand's warm neutral spec */
+  --color-gray-50:  #F7F8F7;
+  --color-gray-100: #EDEFEE;
+  --color-gray-200: #DDE1DF;
+  --color-gray-300: #C7CDCB;
+  --color-gray-400: #A9B2B0;
+  --color-gray-500: #8A938F;
+  --color-gray-600: #69716E;
+  --color-gray-700: #4A524F;
+  --color-gray-800: #2C3431;
+  --color-gray-900: #0A231E;
+
+  /* Status */
+  --color-problem-red: #CF2519;
+  --color-problem-salmon: #FFE9E5;
+
+  /* Radius — the rounded-square family */
+  --radius-brand: 28%;
+
+  /* Shadows — soft, low-contrast, cool-neutral. Never heavy drop shadows. */
+  --shadow-xs: 0 1px 2px rgba(10, 35, 30, 0.06);
+  --shadow-sm: 0 2px 6px rgba(10, 35, 30, 0.07);
+  --shadow-md: 0 6px 18px rgba(10, 35, 30, 0.08);
+  --shadow-lg: 0 14px 40px rgba(10, 35, 30, 0.10);
+
+  /* Motion — quick, eased, restrained. No bounce. */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 @plugin "./vendor/daisyui-theme.js" {
-  name: "dark";
-  prefersdark: true;
+  name: "invoca";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: #FFFFFF;
+  --color-base-200: #F2F5E4;
+  --color-base-300: #EDEFEE;
+  --color-base-content: #2C3431;
+
+  --color-primary: #00B388;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #004030;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #D1FFD1;
+  --color-accent-content: #0A231E;
+  --color-neutral: #0A231E;
+  --color-neutral-content: #FFFFFF;
+
+  --color-info: #5E74E3;
+  --color-info-content: #FFFFFF;
+  --color-success: #00B388;
+  --color-success-content: #FFFFFF;
+  --color-warning: #E8B93F;
+  --color-warning-content: #0A231E;
+  --color-error: #CF2519;
+  --color-error-content: #FFFFFF;
+
+  --radius-selector: 999px;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* Focus ring, per the brand interaction spec: 3px green at ~55%, 2px offset. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid color-mix(in srgb, #00B388 55%, transparent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: #D1FFD1;
+    color: #0A231E;
+  }
 }

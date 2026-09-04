@@ -24,6 +24,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_055130) do
     t.index ["user_id"], name: "index_accounts_on_user_id"
   end
 
+  create_table "budgets", force: :cascade do |t|
+    t.bigint "category_id", null: false
+    t.datetime "created_at", null: false
+    t.date "month", null: false
+    t.integer "target_cents", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["category_id"], name: "index_budgets_on_category_id"
+    t.index ["user_id", "category_id", "month"], name: "index_budgets_on_user_id_and_category_id_and_month", unique: true
+    t.index ["user_id"], name: "index_budgets_on_user_id"
+  end
+
   create_table "categories", force: :cascade do |t|
     t.string "color", null: false
     t.datetime "created_at", null: false
@@ -90,6 +102,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_055130) do
   end
 
   add_foreign_key "accounts", "users"
+  add_foreign_key "budgets", "categories"
+  add_foreign_key "budgets", "users"
   add_foreign_key "categories", "users"
   add_foreign_key "feature_flag_assignments", "feature_flags"
   add_foreign_key "feature_flag_assignments", "users"

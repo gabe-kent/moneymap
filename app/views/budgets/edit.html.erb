@@ -1,0 +1,3 @@
+<% content_for :title, "Edit budget · Moneymap" %>
+<%= render layout: "shared/page_header", locals: { title: "Edit budget", subtitle: "#{@budget.category.name} · #{@budget.month.strftime('%B %Y')}" } do %><% end %>
+<div class="<%= panel_classes("p-6") %>"><%= render "form", budget: @budget %></div>

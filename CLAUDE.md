@@ -27,12 +27,16 @@ pillar 1, but pairing it with "here's why this matters and what to do about it" 
 
 ## Project state
 
-Moneymap is a Rails 8.1 application currently at the bootstrap stage: `rails new` plus the
-built-in authentication generator (`bin/rails generate authentication`). Beyond
-sign-up/sign-in/password-reset, there is no product-specific domain logic yet, so don't assume
-the two pillars above are *implemented* — check `app/models` and `config/routes.rb` before
-referencing "existing" functionality. The pillars describe what this repo is *for*, not what's
-built so far.
+Moneymap is a Rails 8.1 application built on `rails new` plus the built-in authentication
+generator (`bin/rails generate authentication`). Pillar 1 now has a working core: **Accounts,
+Categories, Transactions, Transfers and Budgets** all have models and CRUD, plus a Dashboard and
+a Reports page. Pillar 2 (the education layer) is **not** built — the dashboard's generated
+"insights" are the only thing gesturing at it. Goals and Education from the target data model
+don't exist, and neither does Plaid sync; entry is still manual.
+
+Three of those pages ship behind feature flags and are **off by default** — see the Feature
+flags convention below before concluding the dashboard is "missing". Check `app/models` and
+`config/routes.rb` rather than trusting this paragraph, which will lag.
 
 `docs/financial-literacy-platform-plan.md` and `docs/environment-setup-runbook.md` capture the
 longer-range plan (target data model, phased build-out, hosting/cost decisions) and the
@@ -48,9 +52,10 @@ exists today. The **Conventions** below are the subset of that plan already adop
   below before touching `config/database.yml` or the production schema files.
 - **Phase 1 is complete** (as of 2026-07-24): DaisyUI + Lucide icons are installed (see
   **Conventions** below for how, since there's no npm/Node in this repo), and `db/seeds.rb` seeds
-  two sample users. Phase 1's remaining scope is now genuine product work — the target data model
-  (Accounts → Categories → Transactions → Budget → Goals → Education) in
-  `docs/financial-literacy-platform-plan.md`.
+  two sample users. Of the target data model in `docs/financial-literacy-platform-plan.md`
+  (Accounts → Categories → Transactions → Budget → Goals → Education), everything up to **Budget**
+  is built; **Goals** and **Education** are the remaining product work, and Education is where
+  pillar 2 actually gets delivered.
 - Free-tier Postgres expires 2026-08-19 (created 2026-07-20) — upgrade or recreate before then.
   Recreating will hit the same "queue/cache/cable schemas don't load" issue on first boot;
   `db:prepare_solid_schemas` handles it automatically, no manual action needed.
@@ -144,7 +149,10 @@ Queue back into its own `type: worker` service in `render.yaml`.
 - **Money** is stored as integer cents via `money-rails` (initializer at
   `config/initializers/money.rb`) — never floats. Format for display only in views.
 - **Business logic** belongs in `app/services/`, one public `#call` method per service — not in
-  fat models or controllers.
+  fat models or controllers. The read-heavy pages follow this too: `DashboardSummary`,
+  `BudgetOverview` and `SpendingReport` each return one value object for their page, sharing
+  rollups (monthly income/expense, net worth on a date, spend by category) through the
+  `TransactionAggregates` module. Add a new rollup there rather than re-deriving it per page.
 - **Scoping:** every controller action authorizes `current_user` (via the `Authentication`
   concern) and scopes queries to them. The one exception is the `Admin::` controller namespace
   (currently just feature flags — see below), gated by the boolean `User#admin` column via the
@@ -161,9 +169,34 @@ Queue back into its own `type: worker` service in `render.yaml`.
   the `rails_icons` gem (pure Ruby, `icon("name")` helper) with the Lucide set vendored as SVGs
   under `app/assets/svg/icons/lucide` — `bin/rails generate rails_icons:sync --library=lucide`
   re-syncs them; browse available names at lucide.dev.
-- `strong_migrations` guards against unsafe migrations; `chartkick` + `groupdate` are available
-  for future charting needs. `letter_opener` previews mail in the browser in development
-  (`config/environments/development.rb`) instead of attempting delivery.
+- **The theme is the Invoca design system, not stock DaisyUI.** `app/assets/tailwind/application.css`
+  defines the palette (Invoca Green `#00B388`, Green Black, Sand, Mint, a green-tinted neutral
+  ramp), Inter, radii and shadows as Tailwind v4 `@theme` tokens, *and* a DaisyUI theme named
+  `invoca` built from the same values — so `btn-primary` / `card` / `alert` in older markup pick
+  up the brand without being rewritten. Consequences worth knowing:
+  - **There is no dark mode.** The stock `light`/`dark` themes were replaced by the single
+    `invoca` theme (`default: true`), because the design is light-only. Don't add
+    `dark:` variants expecting them to work.
+  - `--color-gray-*` and `--color-green-*` **override** Tailwind's defaults with the brand ramps,
+    so `text-gray-500` is a green-tinted neutral and `bg-green-500` is Invoca Green.
+  - Inter loads from Google Fonts via a `<link>` in the layout, with a system-sans fallback in
+    the token — it is not vendored.
+- **Page chrome comes from helpers and shared partials, not copy-pasted classes.**
+  `panel_classes` / `section_heading_classes` / `eyebrow_classes` / `primary_button_classes` /
+  `ghost_button_classes` in `ApplicationHelper`, and `shared/_page_header`, `_empty_state`,
+  `_sidebar`, `_nav_item`, `_brand`, `_flashes`. The app shell is a 240px persistent sidebar
+  (`shared/_sidebar`) rendered for authenticated users; signed-out pages get a centered shell
+  instead. To add a nav section, add an entry to the arrays at the top of `_sidebar` — including
+  its `feature:` key if it's flag-gated — rather than hand-writing a link.
+- **Charts are hand-rolled**, as inline SVG (the reports trend line) and CSS-sized divs (bar
+  charts, progress bars, a `conic-gradient` donut), to match the design pixel-for-pixel.
+  `chartkick` + `groupdate` are in the Gemfile but **still unused anywhere** — don't assume a
+  chart on screen came from them, and weigh design fidelity before reaching for them.
+- **Category colours** live on `Category::COLOR_HEX`, keyed by the `color` enum. It's the single
+  source for both swatch markup and chart fills, since charts need a literal value rather than a
+  utility class. Render swatches via `category_dot` / `category_chip` in `CategoriesHelper`.
+- `strong_migrations` guards against unsafe migrations. `letter_opener` previews mail in the
+  browser in development (`config/environments/development.rb`) instead of attempting delivery.
 - **Feature flags** are Postgres-backed via a hand-rolled `FeatureFlag`/`FeatureFlagAssignment`
   model pair (no Flipper, no Redis) — see
   `docs/superpowers/specs/2026-09-04-feature-flags-design.md` for why. Check one with
@@ -182,6 +215,18 @@ Queue back into its own `type: worker` service in `render.yaml`.
   those env vars or a future self-serve grant path. See
   `docs/agentic-development-lifecycle.md`'s "Large or risky changes" section for *when* to reach
   for a flag, not just how.
+  The registry currently holds three keys, each gating one page via `gate_behind` (the
+  `FeatureGated` concern): `dashboard` → `/dashboard`, `budgets` → `/budgets`, `reports` →
+  `/reports`. A gated page responds **404** rather than redirecting, matching how
+  `AdminAuthorization` treats a non-admin, and the sidebar drops the section entirely; the root
+  route falls back to `/transactions` when `dashboard` is off. In views and controllers ask
+  `feature_enabled?(:key)` — an `ApplicationController` helper that memoizes per request and
+  delegates to `FeatureFlagCheck`.
+  **`db/seeds.rb` enables all three in development only.** That guard is deliberate: seeds run on
+  every production container boot, so enabling them there would make the gates decorative and
+  ship the pages on first deploy — exactly the property the flag exists to provide. In tests,
+  flags are off unless a test opts in via `enable_feature` / `enable_feature_for`
+  (`test/test_helpers/feature_flag_test_helper.rb`).
 
 ### Security — don't reintroduce gaps `docs/production-launch-tbd.md` already tracks
 
