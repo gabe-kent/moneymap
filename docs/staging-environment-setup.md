@@ -85,3 +85,9 @@ feature branch -> PR -> merge into `staging` -> auto-deploys to moneymap-staging
 `staging` and `main` should generally stay in sync in that direction — don't let `staging` drift
 permanently ahead without periodically promoting it, or the two environments stop meaning
 anything.
+
+## See also: Render's own Pull Request Previews
+
+Render offers a separate, native per-PR preview feature (distinct from the Preview Environments
+product, which needs a Pro plan) — see `docs/render-pr-previews.md`. Not enabled yet: it has a
+real database-sharing gotcha given this repo's single free Postgres instance, covered there.

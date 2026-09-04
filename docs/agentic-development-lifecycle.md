@@ -16,7 +16,10 @@ staging comes back once that changes.
 - Merging a PR deploys straight to production (`moneymap-1rbv.onrender.com` tracks `main`) —
   there is no pre-prod staging deploy to catch problems first. Compensate by testing locally
   before merging: run `bin/ci`, plus an actual click-through of the change (`bin/dev`) — this
-  takes the place of the "QA on staging" step described below.
+  takes the place of the "QA on staging" step described below. `docs/render-pr-previews.md`
+  documents a Render-native per-PR preview option that could help here too, but it isn't enabled
+  yet — it has a real database-sharing gotcha to resolve first (previews inherit production's
+  `DATABASE_URL` by default).
 - The hotfix and doc/test-only exceptions described below are moot for now — everything already
   targets `main`, so there's no staging round-trip to skip.
 - `.github/workflows/promote-staging.yml` is inert while paused (it only fires on a push to
