@@ -110,13 +110,17 @@ if demo_user.accounts.none?
 end
 
 # Personal login, opt-in via env vars set in the Render dashboard (there's no self-serve
-# sign-up yet, and SSH/console access isn't available on the free plan). Only sets the
-# password on creation, so re-running this after changing SEED_ADMIN_PASSWORD won't
-# silently reset an already-created account.
+# sign-up yet, and SSH/console access isn't available on the free plan) — also the only way to
+# reach the admin flag UI in production, since that same lack of console access rules out
+# `User.find_by(...).update!(admin: true)` there. Only sets the password on creation, so
+# re-running this after changing SEED_ADMIN_PASSWORD won't silently reset an already-created
+# account; the admin grant, though, is checked and (re-)applied on every boot, so promoting this
+# user doesn't require recreating the record.
 if ENV["SEED_ADMIN_EMAIL"].present? && ENV["SEED_ADMIN_PASSWORD"].present?
-  User.find_or_create_by!(email_address: ENV["SEED_ADMIN_EMAIL"]) do |user|
+  admin_user = User.find_or_create_by!(email_address: ENV["SEED_ADMIN_EMAIL"]) do |user|
     user.password = ENV["SEED_ADMIN_PASSWORD"]
   end
+  admin_user.update!(admin: true) unless admin_user.admin?
 end
 
 puts "Seeded #{User.count} user(s)."
