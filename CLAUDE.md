@@ -141,7 +141,9 @@ Queue back into its own `type: worker` service in `render.yaml`.
 - **Business logic** belongs in `app/services/`, one public `#call` method per service — not in
   fat models or controllers.
 - **Scoping:** every controller action authorizes `current_user` (via the `Authentication`
-  concern) and scopes queries to them; there is no admin/cross-user access path yet.
+  concern) and scopes queries to them. The one exception is the `Admin::` controller namespace
+  (currently just feature flags — see below), gated by the boolean `User#admin` column via the
+  `AdminAuthorization` concern; there's still no other cross-user access path.
 - **No React/Vue or JS build framework** — Hotwire (Turbo + Stimulus) only, via importmaps.
 - **No Redis** — Solid Queue / Solid Cache / Solid Cable cover jobs, cache, and cable on Postgres.
 - **UI kit is DaisyUI + Lucide, installed without npm/Node** (this repo has neither): DaisyUI's
@@ -157,3 +159,13 @@ Queue back into its own `type: worker` service in `render.yaml`.
 - `strong_migrations` guards against unsafe migrations; `chartkick` + `groupdate` are available
   for future charting needs. `letter_opener` previews mail in the browser in development
   (`config/environments/development.rb`) instead of attempting delivery.
+- **Feature flags** are Postgres-backed via a hand-rolled `FeatureFlag`/`FeatureFlagAssignment`
+  model pair (no Flipper, no Redis) — see
+  `docs/superpowers/specs/2026-09-04-feature-flags-design.md` for why. Check one with
+  `FeatureFlag.enabled?(:key, user: Current.user)` (logic lives in
+  `app/services/feature_flag_check.rb`; global enablement always wins over a per-user override).
+  To add a new flag: add its key to `FeatureFlag::REGISTRY` in `app/models/feature_flag.rb`, then
+  either toggle it at `/admin/feature_flags` (creates its row automatically) or in Rails console
+  (`FeatureFlag.create!(key: "...")`) — takes effect immediately, no deploy. The admin UI itself
+  is gated by `User#admin` (boolean column, no self-serve grant path — promote via console:
+  `User.find_by(email_address: "...").update!(admin: true)`).

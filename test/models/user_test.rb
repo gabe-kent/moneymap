@@ -10,4 +10,8 @@ class UserTest < ActiveSupport::TestCase
     user = User.create!(email_address: "new-user@example.com", password: "password")
     assert_equal 8, user.categories.count
   end
+
+  test "admin defaults to false" do
+    assert_not users(:one).admin?
+  end
 end

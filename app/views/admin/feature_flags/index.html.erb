@@ -1,0 +1,45 @@
+<div class="w-full">
+  <h1 class="text-4xl font-bold mb-6">Feature flags</h1>
+
+  <div class="overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Global</th>
+          <th>Per-user overrides</th>
+          <th>Grant to</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @feature_flags.each do |flag| %>
+          <tr>
+            <td class="font-mono"><%= flag.key %></td>
+            <td>
+              <%= button_to (flag.globally_enabled? ? "On" : "Off"), admin_feature_flag_path(flag),
+                    method: :patch, class: "btn btn-sm #{flag.globally_enabled? ? "btn-success" : "btn-ghost"}" %>
+            </td>
+            <td>
+              <ul class="flex flex-col gap-1">
+                <% flag.feature_flag_assignments.each do |assignment| %>
+                  <li class="flex items-center gap-2">
+                    <%= assignment.user.email_address %>
+                    <%= button_to "Revoke",
+                          admin_feature_flag_assignment_path(flag, assignment),
+                          method: :delete, class: "btn btn-xs btn-ghost text-error" %>
+                  </li>
+                <% end %>
+              </ul>
+            </td>
+            <td>
+              <%= form_with url: admin_feature_flag_assignments_path(flag), class: "flex gap-2" do |form| %>
+                <%= form.email_field :email_address, placeholder: "user@example.com", required: true, class: "input input-bordered input-sm" %>
+                <%= form.submit "Grant", class: "btn btn-sm" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
