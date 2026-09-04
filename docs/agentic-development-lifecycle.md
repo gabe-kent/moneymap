@@ -1,0 +1,207 @@
+# Agentic development lifecycle
+
+How changes get from an idea to production in moneymap, written for a non-technical
+collaborator to follow end-to-end. Two entry points, one shared path from there on.
+
+## ⏸️ Staging is currently paused
+
+**Status: paused as of 2026-09-04.** While paused, **PRs target `main` directly** instead of
+`staging` — everything below describing the `staging` step is the target workflow for when it's
+re-enabled, not how things work right now. This is a deliberate, temporary choice: build
+velocity comes first while the product is still young and there's no real user base yet;
+staging comes back once that changes.
+
+**What's different while paused:**
+- Default PR base branch is `main`, not `staging` (see "For agents working in this repo" below).
+- Merging a PR deploys straight to production (`moneymap-1rbv.onrender.com` tracks `main`) —
+  there is no pre-prod staging deploy to catch problems first. Compensate by testing locally
+  before merging: run `bin/ci`, plus an actual click-through of the change (`bin/dev`) — this
+  takes the place of the "QA on staging" step described below. `docs/render-pr-previews.md`
+  documents a Render-native per-PR preview option that could help here too, but it isn't enabled
+  yet — it has a real database-sharing gotcha to resolve first (previews inherit production's
+  `DATABASE_URL` by default).
+- The hotfix and doc/test-only exceptions described below are moot for now — everything already
+  targets `main`, so there's no staging round-trip to skip.
+- `.github/workflows/promote-staging.yml` is inert while paused (it only fires on a push to
+  `staging`, and nothing pushes there) — it's left in place rather than removed, since resuming
+  needs it working again with no extra setup.
+- Issue tracking (GitHub Issues, labels) is unaffected — see "Reporting bugs, feature requests,
+  and deferred items" below.
+
+**To resume:** replace this section with a note that staging is active again (date + why), then
+the rest of this doc — "Picking the base branch," the QA section, the agent checklist — already
+describes the target workflow and needs no further edits to take effect. The one other file to
+revert is `.github/pull_request_template.md` — its QA section currently says "before merging"
+instead of "on staging"; flip that back too.
+
+## The two entry points
+
+**1. Design first (Claude Design).** Start in Claude Design, build out webpage mocks, and plan
+functionality directly on the page — no code yet. When the design is ready, export/send it to a
+cloud-enabled Claude Code session to turn into a real, working change.
+
+**2. Talk it through (Claude Code cloud + `/plan-and-build`).** Start a Claude Code cloud
+session and run `/plan-and-build` (see `.claude/skills/plan-and-build/SKILL.md`). It walks you
+through describing what you want (brainstorming), turns that into a written plan you can react
+to before anything is built, then builds it.
+
+Either way, you end up with a **pull request** — a proposed change, not yet live, that's easy to
+look at and comment on before it ships.
+
+## Everything after that is the same
+
+*(Target workflow — while staging is paused, read this as "merge into `main`" and skip straight
+to the last step.)*
+
+```
+                          PR opened
+                              |
+                              v
+                   Merge into `staging` branch
+                              |
+                              v
+              Auto-deploys to moneymap-staging (Render)
+                              |
+                              v
+                    You QA it on staging
+                              |
+                    looks good?  no -> new PR / fix, back to the top
+                              |
+                             yes
+                              v
+              Merge `staging` into `main` (a "promotion")
+                              |
+                              v
+                Auto-deploys to production (moneymap)
+```
+
+### Picking the base branch: staging vs. main
+
+⚠️ This section describes the target/steady-state workflow — **staging is currently paused, see
+the section at the top of this doc.** While paused, every PR targets `main`, full stop; the rest
+of this section is what resumes once that note is updated.
+
+**Default is `staging`, not `main`.** That's the one habit this whole lifecycle depends on —
+see `docs/staging-environment-setup.md` for how staging is set up, and why it isn't a fully
+separate database yet. If you're an agent picking a base branch for a PR in this repo and
+nothing below says otherwise, it's `staging`.
+
+**Exception: doc-only and test-only changes go straight to `main`.** A PR qualifies when
+*every* file it touches is one of:
+- Documentation — `docs/**`, `README.md`, `CLAUDE.md`, `AGENTS.md`, code comments
+- Tests only — `test/**`, with no accompanying change to `app/`, `lib/`, `config/`, `db/`, a
+  Gemfile, or CI/deploy config
+
+These carry no runtime risk: nothing about the deployed app changes, so there's nothing for a
+staging QA pass to actually verify. Routing them through staging first only adds a step and lets
+staging drift further ahead of main on content that was never going to be "tested" there anyway.
+
+If a single PR mixes doc/test changes with anything else — app code, config, migrations,
+dependency bumps, CI/deploy files — treat the whole PR as needing `staging`. The exception only
+applies when a change is *entirely* docs/tests; when in doubt, default to `staging`.
+
+After a doc/test-only PR merges to `main`, back-merge (or cherry-pick) it into `staging` too —
+same reasoning as the hotfix exception below, so the two branches don't quietly diverge on
+content that should exist in both.
+
+**Promoting `staging` to `main` is a separate, deliberate step** — not automatic, and not
+something a PR merge does by itself. It's a manual `staging` -> `main` merge (fast-forward when
+possible) once whatever's on staging has been QA'd and is ready for real users. Do this
+regularly — letting `staging` drift weeks ahead of `main` with unpromoted changes defeats the
+point of having the two.
+
+**A promotion PR is kept open for you automatically.** `.github/workflows/promote-staging.yml`
+runs on every push to `staging` and, whenever `staging` has commits `main` doesn't, makes sure a
+`staging -> main` PR is open — creating one if none exists, leaving an existing one alone (GitHub
+keeps its diff live as `staging` keeps moving), and closing it if the branches end up back in
+sync some other way (e.g. a direct fast-forward). It's plain `git`/`gh` bookkeeping with no
+tests, build, or AI calls — a few seconds of Actions time, nothing more — so promoting is always
+"review this standing PR and merge it," never "remember to go create one." Merge it as a plain
+merge, not squash, so `main`'s history matches what `staging` was actually running.
+
+⚠️ **One-time repo setting this depends on:** the workflow authenticates as the built-in Actions
+bot, which needs **Settings → Actions → General → Workflow permissions → "Allow GitHub Actions
+to create and approve pull requests"** enabled — many repos default this off. If the workflow
+run shows a permissions error instead of opening the PR, this is the first thing to check.
+
+### Exception: hotfixes
+
+A bug actively breaking production shouldn't wait for a staging round-trip. For that case only:
+PR straight against `main`, merge, deploy, then immediately back-merge (or cherry-pick) the fix
+into `staging` so the two don't diverge. Along with the doc/test-only case above, this is one of
+the only two sanctioned paths that skip staging — everything else goes through it.
+
+## Every PR summarizes its own QA
+
+`.github/pull_request_template.md` gives every new PR a **QA** section with two parts, so
+whoever reviews it knows what's already been checked versus what still needs a human to click
+through it. While staging is paused, the template's wording says "before merging" rather than
+"on staging" — since merging deploys straight to production, that manual QA has to happen
+*before* the merge, not after on a staging deploy. The two parts:
+
+- **Automated** — what ran and passed (typically `bin/ci`, or specific commands if the full
+  suite wasn't run). This is a fact, not a plan — only fill it in with things that actually ran.
+- **Manual QA** — a short, concrete, PR-specific checklist of what to click through (locally,
+  via `bin/dev`, while staging is paused). Not a generic "test the app" — call out exactly what
+  changed and how to see it (e.g. "confirm the new KPI card shows the right numbers," not "check
+  the dashboard"). A doc/test-only PR skips this section entirely, since there's no runtime
+  behavior to check either way.
+
+This turns "you QA it" in the diagram above from an open-ended request into a checklist someone
+can actually follow — including whoever wrote the PR, if they want to self-check before asking
+for a look.
+
+## Reporting bugs, feature requests, and deferred items
+
+**GitHub Issues**, directly — no separate system. Reporting something only needs a free GitHub
+account and a browser; no git or coding knowledge required, which is the bar this whole doc is
+written to. Clicking **New issue** offers two plain-language forms —
+`.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml` — that ask a couple of
+questions and apply the right label automatically; a deferred item, or anything that doesn't fit
+either form, can still be filed as a blank issue with the `deferred` label added by hand. The
+labels in use:
+
+| Label | For |
+|---|---|
+| `bug` | Something is broken or behaving wrong. |
+| `enhancement` | A new feature or capability request. |
+| `deferred` | Known, agreed-on, and intentionally not being worked right now — a way to write something down and stop thinking about it without losing it. |
+
+An agent picking up a task from an issue should reference it in the PR description (`Fixes #123`
+/ `Closes #123` for bugs and enhancements — GitHub auto-closes the issue when that PR merges to
+the issue-tracking repo's default branch; while staging is paused that's just the PR's own merge
+to `main`, immediately — once staging resumes, that auto-close instead fires on the later
+`main` promotion, not the initial PR into `staging`).
+Leave `deferred` issues open indefinitely; they're a backlog, not something expected to
+auto-close.
+
+If a future collaborator genuinely can't get a GitHub account, the fallback is a shared
+Google Form -> Google Sheet as an intake point, with someone periodically triaging new rows into
+GitHub Issues — but that's not needed today, so it isn't set up.
+
+## For agents working in this repo
+
+- **While staging is paused (see the top of this doc): every PR targets `main`.** Ignore the
+  staging-vs-main branching logic below until that note says staging is active again.
+- Once staging resumes: default PR base branch is `staging`, not `main`, unless you're doing a
+  sanctioned hotfix, the change is entirely docs/tests (see "Picking the base branch" above), or
+  the user explicitly says otherwise.
+- (Once staging resumes) for a doc/test-only PR merged to `main`, remember the back-merge into
+  `staging` — it's easy to forget since there's no QA step prompting you to look at staging at
+  all, and skipping it is exactly what produces a conflicting promotion PR later (ask us how we
+  know). Moot while staging is paused — everything already targets `main`.
+- Fill in the PR template's QA section with a real, PR-specific manual-QA checklist — not a
+  placeholder or a generic "test the app" line. If you ran `bin/ci` (or equivalent) yourself,
+  say so under **Automated**.
+- `.claude/skills/plan-and-build/SKILL.md`'s "finish the branch" step follows this doc.
+- `plan-and-build`'s review step needs the `superpowers` and `compound-engineering` plugins.
+  These are declared in this repo's own `.claude/settings.json` (project scope, committed) so
+  every session gets them — cloud sessions included — without per-machine setup; see
+  `docs/claude-code-plugins-and-mcps.md`'s "Project-scoped plugins" section if a session still
+  reports them missing.
+- The `check-specs` command doesn't currently specify a base branch, so `gh pr create` without
+  `--base` there defaults to this repo's actual default branch (`main`) — which is what you want
+  while staging is paused, so no override needed right now. Once staging resumes, override it
+  manually again: `gh pr create --base staging ...`.
+- Don't merge your own PRs, and don't promote `staging` to `main` yourself unless asked to —
+  that's the "you QA it" checkpoint above, and it's a human decision.

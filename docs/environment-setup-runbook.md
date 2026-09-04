@@ -475,6 +475,13 @@ Scans the repo and generates a starter `CLAUDE.md`. Refine it with the stack
 rules from Appendix B of the Build & Launch Plan (Hotwire only, money in cents,
 business logic in `app/services/`, etc.).
 
+**Permission prompts getting old?** `--dangerously-skip-permissions` (bypass mode)
+is the user's own preferred local default for this repo — set it in
+`.claude/settings.local.json`, not the shared `.claude/settings.json`. See
+`docs/claude-code-permission-modes.md` for the gotchas worth knowing (it's
+silently unavailable in cloud sessions, doesn't skip everything even locally) —
+they're context for using it well, not reasons to avoid it here.
+
 **Workflow:** run `bin/dev` in one terminal, `claude` in a second terminal so
 Claude Code edits files while you watch them live-reload in the browser.
 
@@ -729,6 +736,55 @@ claude mcp add --transport http render https://mcp.render.com/mcp \
 - ✅ DaisyUI UI kit + Lucide icons (installed without npm/Node — see CLAUDE.md Conventions)
 - ✅ Seed data (`db/seeds.rb`) — sample users + opt-in production login (Step 7)
 - ✅ Logged into the live production app with a real account
+
+## Claude Code cloud session bootstrap
+
+Everything above is the *local* (WSL2) setup. A **cloud session** — a web session at
+[code.claude.com](https://code.claude.com), `claude --cloud`, or a Routine fired via its API
+trigger (see `docs/claude-code-routine-trigger.md`) — runs in an ephemeral container instead,
+and needs its own one-time setup, split into two independent pieces: the dev environment itself,
+and push/PR access back to GitHub.
+
+### Step 1 — Environment setup script
+
+Cloud sessions do **not** read `.devcontainer/devcontainer.json` (a known Claude Code gap) and
+the VM ships generic Ruby versions, not this repo's `.ruby-version`. Configure the cloud
+environment's **setup script** field directly instead — see `docs/cloud-environment-setup.md`
+for the exact script (installs Ruby 3.4.10 via rbenv, starts Postgres, sets `DATABASE_URL`) and
+the environment variables it needs. This only has to be set once per cloud environment
+definition, not per session — each session still runs `bin/rails db:prepare` itself since the
+repo is cloned fresh every time.
+
+### Step 2 — GitHub App install for push/PR access ⚠️
+
+**Symptom:** a cloud session finishes real work — commits, tests passing — but the push is
+refused. The response instead includes a patch and says something like *"Claude's GitHub App
+isn't installed for that repo's org"* — even though this repo (`gabe-kent/moneymap`) sits under
+a personal account, not an org; the message's wording doesn't distinguish the two. Rather than
+push, it hands back `git am`-able patch content and a link to install the app.
+
+✅ **Fix:** install Claude's GitHub App for the account that owns the repo:
+
+1. Go to **[github.com/apps/claude/installations/select_target](https://github.com/apps/claude/installations/select_target)**,
+   logged in as the account that owns the target repo (here, `gabe-kent`).
+2. Pick that account as the install target (personal accounts show up as install targets here
+   too, not just orgs).
+3. Grant repo access — either **All repositories**, or **Only select repositories** with
+   `moneymap` added explicitly.
+4. Confirm. It shows up afterward under that account's **Settings → Applications → Installed
+   GitHub Apps**.
+
+This is a one-time authorization only a human can do (it needs your GitHub login) — there's no
+API for it by design. Once installed, cloud sessions push and open PRs directly; no more
+patch-and-`git am` round trip.
+
+⚠️ **Why the patch matters if you hit this before installing the app:** the session's container
+is ephemeral, so if the GitHub App isn't installed yet at push time, that patch is the *only*
+durable copy of the work — save it (or `git am` it locally) before the session/container is
+gone, rather than assuming you can just re-run the session later.
+
+**Verify:** trigger any push from a cloud session (or re-run a previously-blocked one) and
+confirm it lands as a real push/PR instead of returning a patch.
 
 ## Next
 

@@ -2,13 +2,37 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@AGENTS.md
+
+Claude Code only reads `CLAUDE.md`, never `AGENTS.md`, in either local or cloud sessions
+(confirmed against [code.claude.com/docs/en/memory.md](https://code.claude.com/docs/en/memory.md)) —
+the import above is what actually makes `AGENTS.md`'s content (currently: the caveman style rule)
+reach Claude Code at all. See `docs/claude-code-plugins-and-mcps.md`'s caveman section for how
+`AGENTS.md` was generated and kept in sync with the other IDE-agent rule files.
+
+## What Moneymap is
+
+Two things in one, for individual users, not businesses or advisors:
+
+1. **A personal finance app** — track accounts, categorize spending, and budget, starting with
+   manual transaction entry (Plaid bank sync is later-phase, see the plan doc below).
+2. **A financial literacy aid** — the numbers come with context and education, not just a
+   ledger. This is explicitly financial *education*, not personalized investment/securities
+   advice — see the Scope note at the top of `docs/financial-literacy-platform-plan.md` for why
+   that boundary matters.
+
+Keep both pillars in mind when a feature is ambiguous: e.g. a spending-by-category chart is
+pillar 1, but pairing it with "here's why this matters and what to do about it" copy is pillar 2
+— both are in scope, generic bookkeeping/accounting-firm features are not.
+
 ## Project state
 
 Moneymap is a Rails 8.1 application currently at the bootstrap stage: `rails new` plus the
 built-in authentication generator (`bin/rails generate authentication`). Beyond
-sign-up/sign-in/password-reset, there is no product-specific domain logic, so don't assume
-budgeting/finance features exist yet — check `app/models` and `config/routes.rb` before
-referencing "existing" functionality.
+sign-up/sign-in/password-reset, there is no product-specific domain logic yet, so don't assume
+the two pillars above are *implemented* — check `app/models` and `config/routes.rb` before
+referencing "existing" functionality. The pillars describe what this repo is *for*, not what's
+built so far.
 
 `docs/financial-literacy-platform-plan.md` and `docs/environment-setup-runbook.md` capture the
 longer-range plan (target data model, phased build-out, hosting/cost decisions) and the
@@ -30,6 +54,24 @@ exists today. The **Conventions** below are the subset of that plan already adop
 - Free-tier Postgres expires 2026-08-19 (created 2026-07-20) — upgrade or recreate before then.
   Recreating will hit the same "queue/cache/cable schemas don't load" issue on first boot;
   `db:prepare_solid_schemas` handles it automatically, no manual action needed.
+- **Staging environment is scaffolded but not yet live**: `render.staging.yaml` + a `staging`
+  branch exist for a `moneymap-staging` Render service, sharing production's free Postgres
+  instance via a separate database rather than a second (paid) instance. The dashboard-side
+  Blueprint creation and secret setup are manual steps not yet done — see
+  `docs/staging-environment-setup.md` for the full walkthrough. Don't assume a staging URL exists
+  until this note is updated to say it's live.
+
+## Development workflow
+
+⏸️ **Staging is paused as of 2026-09-04 — open PRs against `main` directly, not `staging`.**
+Full details (including how to resume) are in `docs/agentic-development-lifecycle.md`'s
+"Staging is currently paused" section; the short version is that build velocity comes first
+while the product is still young, and merging a PR now deploys straight to production (there is
+no pre-prod check in between). Compensate by testing locally before merging — `bin/ci`, plus a
+manual click-through of the actual change — since there's no staging deploy to verify against
+instead. Bugs, feature requests, and deferred work are still tracked as GitHub Issues (`bug` /
+`enhancement` / `deferred` labels) — see the lifecycle doc for that convention, which is
+unaffected by the pause.
 
 ## Commands
 
@@ -99,7 +141,9 @@ Queue back into its own `type: worker` service in `render.yaml`.
 - **Business logic** belongs in `app/services/`, one public `#call` method per service — not in
   fat models or controllers.
 - **Scoping:** every controller action authorizes `current_user` (via the `Authentication`
-  concern) and scopes queries to them; there is no admin/cross-user access path yet.
+  concern) and scopes queries to them. The one exception is the `Admin::` controller namespace
+  (currently just feature flags — see below), gated by the boolean `User#admin` column via the
+  `AdminAuthorization` concern; there's still no other cross-user access path.
 - **No React/Vue or JS build framework** — Hotwire (Turbo + Stimulus) only, via importmaps.
 - **No Redis** — Solid Queue / Solid Cache / Solid Cable cover jobs, cache, and cable on Postgres.
 - **UI kit is DaisyUI + Lucide, installed without npm/Node** (this repo has neither): DaisyUI's
@@ -115,3 +159,13 @@ Queue back into its own `type: worker` service in `render.yaml`.
 - `strong_migrations` guards against unsafe migrations; `chartkick` + `groupdate` are available
   for future charting needs. `letter_opener` previews mail in the browser in development
   (`config/environments/development.rb`) instead of attempting delivery.
+- **Feature flags** are Postgres-backed via a hand-rolled `FeatureFlag`/`FeatureFlagAssignment`
+  model pair (no Flipper, no Redis) — see
+  `docs/superpowers/specs/2026-09-04-feature-flags-design.md` for why. Check one with
+  `FeatureFlag.enabled?(:key, user: Current.user)` (logic lives in
+  `app/services/feature_flag_check.rb`; global enablement always wins over a per-user override).
+  To add a new flag: add its key to `FeatureFlag::REGISTRY` in `app/models/feature_flag.rb`, then
+  either toggle it at `/admin/feature_flags` (creates its row automatically) or in Rails console
+  (`FeatureFlag.create!(key: "...")`) — takes effect immediately, no deploy. The admin UI itself
+  is gated by `User#admin` (boolean column, no self-serve grant path — promote via console:
+  `User.find_by(email_address: "...").update!(admin: true)`).

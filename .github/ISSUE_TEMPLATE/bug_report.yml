@@ -1,0 +1,25 @@
+name: Bug report
+description: Something in moneymap is broken or not working right.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Plain language is fine — what did you do, and what went wrong?
+      placeholder: "I tried to X and got Y instead of Z."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: false
+  - type: input
+    id: where
+    attributes:
+      label: Where did this happen?
+      description: A page name or URL is enough — no need to be precise.
+    validations:
+      required: false

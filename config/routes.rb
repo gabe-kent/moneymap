@@ -5,11 +5,23 @@ Rails.application.routes.draw do
   get "reports" => "reports#show", as: :reports
   resource :session
   resources :passwords, param: :token
+  resource :settings, only: %i[ edit update ]
+  resources :user_sessions, only: %i[ destroy ] do
+    collection do
+      delete :destroy_all
+    end
+  end
   resources :accounts, except: :show
   resources :categories, except: :show
   resources :transactions, except: :show
   resources :budgets, except: :show
   resources :transfers, only: %i[ new create edit update destroy ]
+
+  namespace :admin do
+    resources :feature_flags, only: %i[ index update ] do
+      resources :feature_flag_assignments, only: %i[ create destroy ], as: :assignments
+    end
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

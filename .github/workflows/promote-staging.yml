@@ -1,0 +1,60 @@
+name: Sync staging promotion PR
+
+# Keeps a standing "staging -> main" PR open whenever staging has commits main doesn't,
+# so promoting to production is always "review this PR and merge it" rather than
+# something a human has to remember to go create. Pure git/gh bookkeeping — no build,
+# no tests, no AI calls — so this costs a few seconds of Actions time, nothing else.
+#
+# Once the PR exists, GitHub keeps its diff live on every subsequent push to staging —
+# this workflow doesn't need to (and doesn't) touch it again until either staging catches
+# up to main (close it) or it needs to be (re)created (staging moved but no open PR
+# exists, e.g. someone closed it without merging).
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync-promotion-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Compare staging and main
+        id: diff
+        run: |
+          git fetch origin main staging --quiet
+          echo "ahead=$(git rev-list --count origin/main..origin/staging)" >> "$GITHUB_OUTPUT"
+
+      - name: Find existing promotion PR
+        id: existing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NUM=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head staging --state open --json number --jq '.[0].number // empty')
+          echo "number=$NUM" >> "$GITHUB_OUTPUT"
+
+      - name: Open promotion PR
+        if: steps.diff.outputs.ahead != '0' && steps.existing.outputs.number == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head staging \
+            --title "Promote staging → main" \
+            --body "Auto-opened: \`staging\` has commits not yet on \`main\`. QA them on moneymap-staging, then merge this PR (a plain merge, not squash, to keep history matching) to deploy to production. See \`docs/agentic-development-lifecycle.md\`. This PR stays open and up to date automatically as staging changes — no need to close and reopen it."
+
+      - name: Close stale promotion PR
+        if: steps.diff.outputs.ahead == '0' && steps.existing.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ steps.existing.outputs.number }}" --repo "$GITHUB_REPOSITORY" \
+            --body "staging and main are back in sync (promoted another way, e.g. a direct fast-forward) — closing this auto-generated PR."
+          gh pr close "${{ steps.existing.outputs.number }}" --repo "$GITHUB_REPOSITORY"

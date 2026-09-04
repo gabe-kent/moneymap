@@ -1,7 +1,8 @@
-<% active = item[:controllers].include?(controller_name) %>
+<% active = item[:controllers].include?(controller_path) %>
 <%= link_to item[:path],
       class: class_names("flex items-center gap-2.5 py-2.5 px-3 rounded-xl transition-colors",
-                         active ? "bg-mint" : "hover:bg-gray-50") do %>
+                         active ? "bg-mint" : "hover:bg-gray-50"),
+      aria: { current: active ? "page" : nil } do %>
   <%= icon item[:icon], class: class_names("size-4 shrink-0", active ? "text-deep-green" : "text-gray-500") %>
   <span class="text-sm <%= active ? "font-semibold text-green-black" : "text-gray-500" %>"><%= item[:label] %></span>
 <% end %>
