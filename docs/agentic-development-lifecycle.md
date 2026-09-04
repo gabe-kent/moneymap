@@ -193,6 +193,9 @@ GitHub Issues — but that's not needed today, so it isn't set up.
 - Fill in the PR template's QA section with a real, PR-specific manual-QA checklist — not a
   placeholder or a generic "test the app" line. If you ran `bin/ci` (or equivalent) yourself,
   say so under **Automated**.
+- If the PR changes what a user can see or do, add a one-line entry to `CHANGELOG.md` (newest
+  date at the top) naming the PR. Skip this for pure refactors, internal tooling, and docs-only
+  PRs.
 - `.claude/skills/plan-and-build/SKILL.md`'s "finish the branch" step follows this doc.
 - `plan-and-build`'s review step needs the `superpowers` and `compound-engineering` plugins.
   These are declared in this repo's own `.claude/settings.json` (project scope, committed) so
