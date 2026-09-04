@@ -53,8 +53,6 @@ gem install bundler
 sudo service postgresql start
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" || true
 
-bundle install
-
 # rtk (Rust Token Killer) — a Claude Code PreToolUse hook that transparently
 # compresses Bash tool output before it reaches the model (60-90% token savings
 # on common dev commands). Already configured on the local machine this repo was
@@ -79,11 +77,16 @@ development touches encrypted credentials yet. Add it later only if that changes
 
 ## After the setup script runs
 
-The repo is cloned fresh each session, so `db:prepare`/`db:test:prepare` still need
-to run per-session rather than baked into the setup script (a stale schema baked in
-would drift from migrations over time):
+The setup script runs **before** the repo is cloned, not after — `bundle install`
+belongs here, not in the script above (it failed there with "Could not locate
+Gemfile" once Ruby install itself started succeeding, since there's no `Gemfile`
+on disk yet at that point). The repo is also cloned fresh each session, so
+`db:prepare`/`db:test:prepare` need to run per-session too, rather than being
+baked into the setup script (a stale schema baked in would drift from migrations
+over time):
 
 ```bash
+bundle install
 bin/rails db:prepare
 bin/rails db:test:prepare
 ```
@@ -98,7 +101,10 @@ rtk gain       # should report command history, not "no commands recorded" —
                # Claude Code process (see the rtk note in the setup script above)
 ```
 
-If `bundle install` is close to timing out on a cold cache, that's a real risk of
-the 5-minute setup-script limit — worth checking the environment's build logs the
-first time and trimming the script (e.g. skip `bundler` reinstall if already
-present) if it's cutting it close.
+`bundle install` no longer counts against the setup script's 5-minute limit (see
+above), but compiling Ruby from source via `ruby-build` can itself take a few
+minutes on a cold VM — worth checking the environment's build logs the first
+time if the script is cutting it close. The prebuilt-binary fallback (triggered
+automatically when `ruby-build` fails, e.g. due to `ruby-lang.org` being
+unreachable from this sandbox) is actually faster than compiling, so a fallback
+run should have more headroom, not less.
