@@ -170,7 +170,13 @@ Queue back into its own `type: worker` service in `render.yaml`.
   `FeatureFlag.enabled?(:key, user: Current.user)` (logic lives in
   `app/services/feature_flag_check.rb`; global enablement always wins over a per-user override).
   To add a new flag: add its key to `FeatureFlag::REGISTRY` in `app/models/feature_flag.rb`, then
-  either toggle it at `/admin/feature_flags` (creates its row automatically) or in Rails console
-  (`FeatureFlag.create!(key: "...")`) — takes effect immediately, no deploy. The admin UI itself
-  is gated by `User#admin` (boolean column, no self-serve grant path — promote via console:
-  `User.find_by(email_address: "...").update!(admin: true)`).
+  visit `/admin/feature_flags` (creates its row automatically) to toggle it globally or grant it
+  to specific users by email — takes effect immediately, no deploy. The admin UI itself is gated
+  by `User#admin` (boolean column). **Granting `admin` differs by environment** — there's no
+  self-serve UI for it, and Render's free plan has no SSH/console access, so
+  `User.find_by(...).update!(admin: true)` in a Rails console only works in local dev. In
+  production, `db/seeds.rb`'s existing `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` env-var login
+  (already used for the founder's personal, non-self-serve account) is also the admin bootstrap:
+  it grants that one user `admin: true` on every boot, since `db:seed` reruns on every deploy
+  (`bin/docker-entrypoint`). No other production user can become admin without either changing
+  those env vars or a future self-serve grant path.
