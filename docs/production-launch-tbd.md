@@ -11,7 +11,10 @@ before budgeting off this doc; it's dated 2026-09-04.
 
 See also `docs/repo-review-2026-08-29.md` for a broader, code-level review (dashboard UI,
 performance, some of the same hardening items) — this doc focuses on cost and the security/auth
-gaps that review didn't cover.
+gaps that review didn't cover. `CLAUDE.md`'s **Conventions → Security** section turns several of
+the findings below into standing rules for new code (encrypt new sensitive columns by default,
+throttle new sensitive endpoints, etc.) — this doc is the current backlog those rules exist to
+stop from growing.
 
 ## Costs that are currently $0 but won't stay that way
 
