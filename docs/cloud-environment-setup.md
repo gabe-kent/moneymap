@@ -24,6 +24,11 @@ set -e
 for d in /opt/rbenv/plugins/ruby-build "$(rbenv root)/plugins/ruby-build"; do
   [ -d "$d" ] && git -C "$d" pull -q
 done
+# cache.ruby-lang.org (ruby-build's default download source, a CDN in front of
+# the real release server) returned a bare 403 to this cloud VM -- likely bot/
+# rate-limit protection on that CDN specifically, not a real "file missing"
+# error. Route around it by pointing straight at the origin server instead.
+export RUBY_BUILD_TARBALL_OVERRIDE="https://ftp.ruby-lang.org/pub/ruby/3.4/ruby-3.4.10.tar.gz"
 rbenv install -s 3.4.10
 rbenv global 3.4.10
 gem install bundler
