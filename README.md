@@ -2,8 +2,10 @@
 
 [![CI](https://github.com/gabe-kent/moneymap/actions/workflows/ci.yml/badge.svg)](https://github.com/gabe-kent/moneymap/actions/workflows/ci.yml)
 
-A personal financial literacy platform — budgeting, spending tracking, and financial education
-in one place. See `docs/financial-literacy-platform-plan.md` for the full product plan and
+Two things in one, for individual users: **a personal finance app** (accounts, spending
+categories, budgeting) and **a financial literacy aid** (education alongside the numbers, not
+just a ledger). Explicitly financial education, not personalized investment/securities advice —
+see `docs/financial-literacy-platform-plan.md` for the full product plan, scope boundaries, and
 target data model.
 
 **Status:** bootstrap stage. Authentication, DaisyUI styling, and CI are in place; the core

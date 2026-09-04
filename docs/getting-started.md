@@ -1,10 +1,12 @@
 # Getting started (for a non-technical collaborator)
 
-Everything you need to make your first change to Moneymap using Claude Code's **cloud**
-workflow — no local install, no terminal, just a browser. If you already know what a "cloud
-session" is and just want the PR→production pipeline, skip straight to
-`docs/agentic-development-lifecycle.md`; this doc is the layer before that — how to actually
-open a session and kick off work in the first place.
+Moneymap is two things in one: **a personal finance app** (accounts, spending, budgeting) and
+**a financial literacy aid** (education alongside the numbers) — see the README for the fuller
+one-line version. This doc isn't about the product, though; it's everything you need to make
+your first *change* to it using Claude Code's **cloud** workflow — no local install, no
+terminal, just a browser. If you already know what a "cloud session" is and just want the
+PR→production pipeline, skip straight to `docs/agentic-development-lifecycle.md`; this doc is
+the layer before that — how to actually open a session and kick off work in the first place.
 
 ## What "cloud" means here
 
