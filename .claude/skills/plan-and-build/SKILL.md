@@ -46,4 +46,6 @@ run both.
 
 6. **Finish the branch.** Invoke `superpowers:finishing-a-development-branch` to decide how to
    integrate — this repo's convention (see `check-specs`) is a new branch and an open PR, not a
-   direct commit to `main`, and not a self-merge.
+   direct commit to `main`, and not a self-merge. Per
+   `docs/agentic-development-lifecycle.md`, open the PR against `staging`, not `main`, unless
+   this is a sanctioned hotfix for a live production bug or the user explicitly says otherwise.
