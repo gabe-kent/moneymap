@@ -97,7 +97,9 @@ terms exact" — caveman keeps jargon, ELI5-style plain language avoids it entir
 picking one, `AGENTS.md` has a second, independent block (`eli5-begin`/`eli5-end`, added
 by hand, not by `caveman-init`) that governs `docs/**`, `README.md`, and PR
 descriptions/titles specifically, while caveman continues to govern live chat/terminal
-replies. The two never compete for the same text, so there's no actual contradiction — see
+replies by default — say "eli5" (or "explain like I'm 5" / "in plain terms") in chat to get
+one plain-language reply on demand, same resume-after pattern as caveman's own Auto-Clarity.
+The two never compete for the same text, so there's no actual contradiction — see
 `AGENTS.md` for the exact rule text. Since `caveman-init` only manages its own
 `caveman-begin`/`caveman-end` block on re-run, the hand-added `eli5` block survives a future
 `caveman-init` re-run untouched.
