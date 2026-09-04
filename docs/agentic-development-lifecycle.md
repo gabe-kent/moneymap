@@ -191,6 +191,11 @@ GitHub Issues — but that's not needed today, so it isn't set up.
   placeholder or a generic "test the app" line. If you ran `bin/ci` (or equivalent) yourself,
   say so under **Automated**.
 - `.claude/skills/plan-and-build/SKILL.md`'s "finish the branch" step follows this doc.
+- `plan-and-build`'s review step needs the `superpowers` and `compound-engineering` plugins.
+  These are declared in this repo's own `.claude/settings.json` (project scope, committed) so
+  every session gets them — cloud sessions included — without per-machine setup; see
+  `docs/claude-code-plugins-and-mcps.md`'s "Project-scoped plugins" section if a session still
+  reports them missing.
 - The `check-specs` command doesn't currently specify a base branch, so `gh pr create` without
   `--base` there defaults to this repo's actual default branch (`main`) — which is what you want
   while staging is paused, so no override needed right now. Once staging resumes, override it
