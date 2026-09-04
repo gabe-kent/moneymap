@@ -39,6 +39,21 @@
           <% if Current.user&.admin? %>
             <%= link_to "Admin", admin_feature_flags_path, class: "btn btn-ghost" %>
           <% end %>
+
+          <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-ghost">
+              <%= icon "circle-user", class: "size-5" %>
+              <%= Current.user.email_address %>
+            </div>
+            <div tabindex="0" class="dropdown-content bg-base-100 rounded-box z-10 w-52 p-2 shadow-sm flex flex-col gap-1">
+              <%= link_to edit_settings_path, class: "btn btn-ghost btn-sm justify-start" do %>
+                <%= icon "settings", class: "size-4" %> Settings
+              <% end %>
+              <%= button_to session_path, method: :delete, class: "btn btn-ghost btn-sm justify-start w-full" do %>
+                <%= icon "log-out", class: "size-4" %> Log out
+              <% end %>
+            </div>
+          </div>
         </div>
       <% end %>
     </div>
