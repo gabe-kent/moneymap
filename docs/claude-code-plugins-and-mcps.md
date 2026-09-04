@@ -95,14 +95,22 @@ docs are explicitly written for a non-technical collaborator (see `docs/getting-
 `docs/agentic-development-lifecycle.md`), which is in direct tension with caveman's "technical
 terms exact" — caveman keeps jargon, ELI5-style plain language avoids it entirely. Rather than
 picking one, `AGENTS.md` has a second, independent block (`eli5-begin`/`eli5-end`, added
-by hand, not by `caveman-init`) that governs `docs/**`, `README.md`, and PR
-descriptions/titles specifically, while caveman continues to govern live chat/terminal
-replies by default — say "eli5" (or "explain like I'm 5" / "in plain terms") in chat to get
-one plain-language reply on demand, same resume-after pattern as caveman's own Auto-Clarity.
-The two never compete for the same text, so there's no actual contradiction — see
-`AGENTS.md` for the exact rule text. Since `caveman-init` only manages its own
-`caveman-begin`/`caveman-end` block on re-run, the hand-added `eli5` block survives a future
-`caveman-init` re-run untouched.
+by hand, not by `caveman-init`) that governs non-technical-facing `docs/**` (README,
+`docs/getting-started.md`, and similar) plus PR descriptions/titles, while caveman continues
+to govern live chat/terminal replies by default — say "eli5" (or "explain like I'm 5" / "in
+plain terms") in chat to get one plain-language reply on demand, same resume-after pattern as
+caveman's own Auto-Clarity.
+
+There's a third bucket, not just two: design docs/specs/plans (`docs/superpowers/specs/**`,
+`docs/superpowers/plans/**`) are neither caveman-compressed nor ELI5-simplified — they stay
+normal technical prose, since a spec's reader is deciding whether to approve a schema and
+scope boundaries, not learning the domain from scratch. Without this carve-out the
+plain-language rule's blanket `docs/**` scope would have wrongly pulled specs toward
+ELI5-style simplification, which fits neither their actual audience nor purpose.
+
+None of the three ever compete for the same text — see `AGENTS.md` for the exact rule text.
+Since `caveman-init` only manages its own `caveman-begin`/`caveman-end` block on re-run, the
+hand-added `eli5` block survives a future `caveman-init` re-run untouched.
 
 ⚠️ **Known duplication to clean up:** `superpowers` and `caveman` are each installed **twice**
 from two different marketplaces (`superpowers@superpowers-dev` + `superpowers@claude-plugins-official`;
