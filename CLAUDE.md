@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@AGENTS.md
+
+Claude Code only reads `CLAUDE.md`, never `AGENTS.md`, in either local or cloud sessions
+(confirmed against [code.claude.com/docs/en/memory.md](https://code.claude.com/docs/en/memory.md)) —
+the import above is what actually makes `AGENTS.md`'s content (currently: the caveman style rule)
+reach Claude Code at all. See `docs/claude-code-plugins-and-mcps.md`'s caveman section for how
+`AGENTS.md` was generated and kept in sync with the other IDE-agent rule files.
+
 ## Project state
 
 Moneymap is a Rails 8.1 application currently at the bootstrap stage: `rails new` plus the
@@ -30,6 +38,21 @@ exists today. The **Conventions** below are the subset of that plan already adop
 - Free-tier Postgres expires 2026-08-19 (created 2026-07-20) — upgrade or recreate before then.
   Recreating will hit the same "queue/cache/cable schemas don't load" issue on first boot;
   `db:prepare_solid_schemas` handles it automatically, no manual action needed.
+- **Staging environment is scaffolded but not yet live**: `render.staging.yaml` + a `staging`
+  branch exist for a `moneymap-staging` Render service, sharing production's free Postgres
+  instance via a separate database rather than a second (paid) instance. The dashboard-side
+  Blueprint creation and secret setup are manual steps not yet done — see
+  `docs/staging-environment-setup.md` for the full walkthrough. Don't assume a staging URL exists
+  until this note is updated to say it's live.
+
+## Development workflow
+
+Full details in `docs/agentic-development-lifecycle.md` — the short version: **open PRs against
+`staging`, not `main`**. `staging` deploys to `moneymap-staging`; a separate, deliberate
+`staging` → `main` merge promotes to production. The only exception is a hotfix for a live
+production bug, which goes straight to `main` and gets back-merged into `staging` after. Bugs,
+feature requests, and deferred work are tracked as GitHub Issues (`bug` / `enhancement` /
+`deferred` labels) — see that doc for the reporting/labeling convention.
 
 ## Commands
 

@@ -1,0 +1,18 @@
+name: Feature request
+description: Something you'd like moneymap to do that it doesn't do today.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like to be able to do?
+      description: Describe it however makes sense to you — a real example is great.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would this help?
+      description: Optional, but useful context for prioritizing.
+    validations:
+      required: false

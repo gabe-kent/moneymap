@@ -1,0 +1,42 @@
+# Staging Blueprint — deploys the `staging` branch to a separate Render web service
+# (`moneymap-staging`), for verifying changes before they reach production.
+#
+# Deliberately has NO `databases:` block: Render only allows one free Postgres per
+# workspace (see docs/staging-environment-setup.md), and production's moneymap-db
+# already uses it. Staging instead points DATABASE_URL (set manually below, not via
+# `fromDatabase`) at a second database created on that *same* Postgres instance —
+# same host/user/password as production, different database name. That means
+# staging and production currently share one Postgres instance's 30-day free-tier
+# expiry/recreation cycle and 1GB storage cap; see the doc for the tradeoffs and the
+# path to a fully separate (paid) staging database later.
+#
+# Set up as its own Blueprint in the Render dashboard (New -> Blueprint, same repo,
+# branch `staging`, Blueprint file path `render.staging.yaml`) — see
+# docs/staging-environment-setup.md for the full walkthrough, including the manual
+# `RAILS_MASTER_KEY` / `DATABASE_URL` secrets this file leaves unset.
+services:
+  - type: web
+    name: moneymap-staging
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    branch: staging
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      # Run Solid Queue inside the web dyno instead of a separate worker
+      # service, since background workers aren't available on the free plan.
+      - key: SOLID_QUEUE_IN_PUMA
+        value: "true"
+      # Optional: set both to seed a personal login on this service, since
+      # there's no self-serve sign-up yet and SSH/shell access isn't
+      # available on the free plan. See db/seeds.rb.
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false

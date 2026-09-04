@@ -1,0 +1,121 @@
+# Agentic development lifecycle
+
+How changes get from an idea to production in moneymap, written for a non-technical
+collaborator to follow end-to-end. Two entry points, one shared path from there on.
+
+## The two entry points
+
+**1. Design first (Claude Design).** Start in Claude Design, build out webpage mocks, and plan
+functionality directly on the page — no code yet. When the design is ready, export/send it to a
+cloud-enabled Claude Code session to turn into a real, working change.
+
+**2. Talk it through (Claude Code cloud + `/plan-and-build`).** Start a Claude Code cloud
+session and run `/plan-and-build` (see `.claude/skills/plan-and-build/SKILL.md`). It walks you
+through describing what you want (brainstorming), turns that into a written plan you can react
+to before anything is built, then builds it.
+
+Either way, you end up with a **pull request** — a proposed change, not yet live, that's easy to
+look at and comment on before it ships.
+
+## Everything after that is the same
+
+```
+                          PR opened
+                              |
+                              v
+                   Merge into `staging` branch
+                              |
+                              v
+              Auto-deploys to moneymap-staging (Render)
+                              |
+                              v
+                    You QA it on staging
+                              |
+                    looks good?  no -> new PR / fix, back to the top
+                              |
+                             yes
+                              v
+              Merge `staging` into `main` (a "promotion")
+                              |
+                              v
+                Auto-deploys to production (moneymap)
+```
+
+### Picking the base branch: staging vs. main
+
+**Default is `staging`, not `main`.** That's the one habit this whole lifecycle depends on —
+see `docs/staging-environment-setup.md` for how staging is set up, and why it isn't a fully
+separate database yet. If you're an agent picking a base branch for a PR in this repo and
+nothing below says otherwise, it's `staging`.
+
+**Exception: doc-only and test-only changes go straight to `main`.** A PR qualifies when
+*every* file it touches is one of:
+- Documentation — `docs/**`, `README.md`, `CLAUDE.md`, `AGENTS.md`, code comments
+- Tests only — `test/**`, with no accompanying change to `app/`, `lib/`, `config/`, `db/`, a
+  Gemfile, or CI/deploy config
+
+These carry no runtime risk: nothing about the deployed app changes, so there's nothing for a
+staging QA pass to actually verify. Routing them through staging first only adds a step and lets
+staging drift further ahead of main on content that was never going to be "tested" there anyway.
+
+If a single PR mixes doc/test changes with anything else — app code, config, migrations,
+dependency bumps, CI/deploy files — treat the whole PR as needing `staging`. The exception only
+applies when a change is *entirely* docs/tests; when in doubt, default to `staging`.
+
+After a doc/test-only PR merges to `main`, back-merge (or cherry-pick) it into `staging` too —
+same reasoning as the hotfix exception below, so the two branches don't quietly diverge on
+content that should exist in both.
+
+**Promoting `staging` to `main` is a separate, deliberate step** — not automatic, and not
+something a PR merge does by itself. It's a manual `staging` -> `main` merge (fast-forward when
+possible) once whatever's on staging has been QA'd and is ready for real users. Do this
+regularly — letting `staging` drift weeks ahead of `main` with unpromoted changes defeats the
+point of having the two.
+
+### Exception: hotfixes
+
+A bug actively breaking production shouldn't wait for a staging round-trip. For that case only:
+PR straight against `main`, merge, deploy, then immediately back-merge (or cherry-pick) the fix
+into `staging` so the two don't diverge. Along with the doc/test-only case above, this is one of
+the only two sanctioned paths that skip staging — everything else goes through it.
+
+## Reporting bugs, feature requests, and deferred items
+
+**GitHub Issues**, directly — no separate system. Reporting something only needs a free GitHub
+account and a browser; no git or coding knowledge required, which is the bar this whole doc is
+written to. Clicking **New issue** offers two plain-language forms —
+`.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml` — that ask a couple of
+questions and apply the right label automatically; a deferred item, or anything that doesn't fit
+either form, can still be filed as a blank issue with the `deferred` label added by hand. The
+labels in use:
+
+| Label | For |
+|---|---|
+| `bug` | Something is broken or behaving wrong. |
+| `enhancement` | A new feature or capability request. |
+| `deferred` | Known, agreed-on, and intentionally not being worked right now — a way to write something down and stop thinking about it without losing it. |
+
+An agent picking up a task from an issue should reference it in the PR description (`Fixes #123`
+/ `Closes #123` for bugs and enhancements — GitHub auto-closes the issue when that PR merges to
+the issue-tracking repo's default branch; note that with the staging-first flow above, that
+auto-close fires on the `main` merge, i.e. the promotion, not the initial PR into `staging`).
+Leave `deferred` issues open indefinitely; they're a backlog, not something expected to
+auto-close.
+
+If a future collaborator genuinely can't get a GitHub account, the fallback is a shared
+Google Form -> Google Sheet as an intake point, with someone periodically triaging new rows into
+GitHub Issues — but that's not needed today, so it isn't set up.
+
+## For agents working in this repo
+
+- Default PR base branch is `staging`, not `main`, unless you're doing a sanctioned hotfix, the
+  change is entirely docs/tests (see "Picking the base branch" above), or the user explicitly
+  says otherwise.
+- For a doc/test-only PR merged to `main`, remember the back-merge into `staging` — it's easy to
+  forget since there's no QA step prompting you to look at staging at all.
+- `.claude/skills/plan-and-build/SKILL.md`'s "finish the branch" step follows this doc.
+- The `check-specs` command doesn't currently specify a base branch, so `gh pr create` without
+  `--base` there defaults to this repo's actual default branch (`main`). Until that command is
+  updated, override it manually: `gh pr create --base staging ...`.
+- Don't merge your own PRs, and don't promote `staging` to `main` yourself unless asked to —
+  that's the "you QA it" checkpoint above, and it's a human decision.
