@@ -3,11 +3,18 @@
 This documents the Claude Code plugins and MCP servers configured while building moneymap, as
 a reference for setting up a new machine or a new project the same way.
 
-**Scope note:** unlike the rest of this repo's docs, this config isn't project-specific —
-plugins live in `~/.claude/settings.json` (`enabledPlugins`) and apply to *every* project you
-open Claude Code in, not just moneymap. It's recorded here because this project is where it was
-assembled, as a companion to `environment-setup-runbook.md` (which covers the Render MCP server
-specifically, in Phase 2 Step 8, since that one's more naturally tied to the deploy story).
+**Scope note:** most of this config is personal, not project-specific — plugins installed to
+*user* scope live in `~/.claude/settings.json` and apply to every project you open Claude Code
+in on that machine, but **do not** carry over to a Claude Code cloud session (a fresh VM has no
+`~/.claude/`) or to a teammate's machine. Most of what's below is recorded here for that reason —
+as a reference for setting up a new local machine the same way — as a companion to
+`environment-setup-runbook.md` (which covers the Render MCP server specifically, in Phase 2 Step
+8, since that one's more naturally tied to the deploy story).
+
+The exception is **`.claude/settings.json`** (project scope, committed to this repo, not to be
+confused with `~/.claude/settings.json`) — see "Project-scoped plugins" below. Anything declared
+there genuinely is project-specific and reaches every session working in this repo, cloud or
+local, without per-machine setup.
 
 ---
 
@@ -103,11 +110,13 @@ from two different marketplaces (`superpowers@superpowers-dev` + `superpowers@cl
 
 ```bash
 # Marketplaces used above, beyond the built-in claude-plugins-official
-claude plugin marketplace add https://github.com/obra/superpowers.git        # superpowers-dev
-claude plugin marketplace add https://github.com/thedotmack/claude-mem.git   # thedotmack
+claude plugin marketplace add https://github.com/obra/superpowers.git          # superpowers-dev
+claude plugin marketplace add https://github.com/thedotmack/claude-mem.git     # thedotmack
+claude plugin marketplace add https://github.com/EveryInc/every-marketplace.git # compound-engineering-plugin
 
 # Install (official marketplace plugins resolve without adding a marketplace first)
 claude plugin install superpowers@claude-plugins-official
+claude plugin install compound-engineering@compound-engineering-plugin
 claude plugin install frontend-design@claude-plugins-official
 claude plugin install context7@claude-plugins-official
 claude plugin install code-review@claude-plugins-official
@@ -127,5 +136,46 @@ claude mcp add --transport http render https://mcp.render.com/mcp \
 
 Skip `caveman` unless you specifically want the compressed-output style — it's not part of the
 core dev workflow above.
+
+---
+
+## Project-scoped plugins (committed, reaches cloud sessions too)
+
+A cloud session reported: *"The compound-engineering reviewer agents aren't installed in this
+environment (same gap as the superpowers skills earlier — this session doesn't have that
+plugin)."* That's expected, not a bug — per
+[Claude Code's cloud environments docs](https://code.claude.com/docs/en/cloud-environments.md#what-carries-over-from-your-setup),
+a cloud session starts from a fresh clone with no `~/.claude/`, so *user*-scoped plugins (the
+`claude plugin install` commands above) never reach it. What does reach it: plugins declared in
+the repo's own **`.claude/settings.json`** (project scope — a different file from
+`~/.claude/settings.json`, committed to git), installed from the declared marketplace at cloud
+session start (network permitting).
+
+This repo's `.claude/settings.json` declares the two plugins this repo's own skills reference by
+name — `superpowers` (used throughout `plan-and-build`, `work-issue`) and `compound-engineering`
+(its Rails-specific reviewers, used in `plan-and-build`'s review step). A custom marketplace like
+`compound-engineering-plugin` needs **both** `extraKnownMarketplaces` (registers where the
+marketplace lives) **and** `enabledPlugins` (`"plugin@marketplace": true`) — declaring only the
+latter leaves Claude Code with nowhere to resolve the plugin from:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "compound-engineering-plugin": {
+      "source": { "source": "git", "url": "https://github.com/EveryInc/every-marketplace.git" }
+    }
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "compound-engineering@compound-engineering-plugin": true
+  }
+}
+```
+
+`superpowers` needs no `extraKnownMarketplaces` entry since `claude-plugins-official` is
+Claude Code's built-in marketplace. The rest of the personal plugin list above (frontend-design,
+context7, playwright, etc.) stays user-scoped on purpose — nothing in this repo's own skills
+references them by name, so there's no correctness reason to force them on every cloud session
+and every future contributor's machine.
 
 *Living document — update when a plugin gets added, removed, or replaced.*
