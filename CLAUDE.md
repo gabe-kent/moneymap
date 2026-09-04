@@ -60,6 +60,11 @@ exists today. The **Conventions** below are the subset of that plan already adop
   Blueprint creation and secret setup are manual steps not yet done — see
   `docs/staging-environment-setup.md` for the full walkthrough. Don't assume a staging URL exists
   until this note is updated to say it's live.
+- **`docs/production-launch-tbd.md`** collects the costs and security/auth hardening still open
+  before this is a real product with real users — a private GitHub repo, paid Render plans, a
+  Claude Code plan that covers cloud sessions, no sign-up flow yet, no 2FA, no CSP, no Postgres
+  backups, and more. Not a to-do list to execute now — a reference for when "real users" stops
+  being hypothetical.
 
 ## Development workflow
 
