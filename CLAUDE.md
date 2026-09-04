@@ -10,13 +10,29 @@ the import above is what actually makes `AGENTS.md`'s content (currently: the ca
 reach Claude Code at all. See `docs/claude-code-plugins-and-mcps.md`'s caveman section for how
 `AGENTS.md` was generated and kept in sync with the other IDE-agent rule files.
 
+## What Moneymap is
+
+Two things in one, for individual users, not businesses or advisors:
+
+1. **A personal finance app** — track accounts, categorize spending, and budget, starting with
+   manual transaction entry (Plaid bank sync is later-phase, see the plan doc below).
+2. **A financial literacy aid** — the numbers come with context and education, not just a
+   ledger. This is explicitly financial *education*, not personalized investment/securities
+   advice — see the Scope note at the top of `docs/financial-literacy-platform-plan.md` for why
+   that boundary matters.
+
+Keep both pillars in mind when a feature is ambiguous: e.g. a spending-by-category chart is
+pillar 1, but pairing it with "here's why this matters and what to do about it" copy is pillar 2
+— both are in scope, generic bookkeeping/accounting-firm features are not.
+
 ## Project state
 
 Moneymap is a Rails 8.1 application currently at the bootstrap stage: `rails new` plus the
 built-in authentication generator (`bin/rails generate authentication`). Beyond
-sign-up/sign-in/password-reset, there is no product-specific domain logic, so don't assume
-budgeting/finance features exist yet — check `app/models` and `config/routes.rb` before
-referencing "existing" functionality.
+sign-up/sign-in/password-reset, there is no product-specific domain logic yet, so don't assume
+the two pillars above are *implemented* — check `app/models` and `config/routes.rb` before
+referencing "existing" functionality. The pillars describe what this repo is *for*, not what's
+built so far.
 
 `docs/financial-literacy-platform-plan.md` and `docs/environment-setup-runbook.md` capture the
 longer-range plan (target data model, phased build-out, hosting/cost decisions) and the
