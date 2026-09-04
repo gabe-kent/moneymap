@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_055102) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_04_055130) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -33,6 +33,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_055102) do
     t.bigint "user_id", null: false
     t.index "user_id, lower((name)::text)", name: "index_categories_on_user_id_and_lower_name", unique: true
     t.index ["user_id"], name: "index_categories_on_user_id"
+  end
+
+  create_table "feature_flag_assignments", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "feature_flag_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["feature_flag_id", "user_id"], name: "index_feature_flag_assignments_on_flag_and_user", unique: true
+    t.index ["feature_flag_id"], name: "index_feature_flag_assignments_on_feature_flag_id"
+    t.index ["user_id"], name: "index_feature_flag_assignments_on_user_id"
+  end
+
+  create_table "feature_flags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "globally_enabled", default: false, null: false
+    t.string "key", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_feature_flags_on_key", unique: true
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -73,6 +91,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_055102) do
 
   add_foreign_key "accounts", "users"
   add_foreign_key "categories", "users"
+  add_foreign_key "feature_flag_assignments", "feature_flags"
+  add_foreign_key "feature_flag_assignments", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
