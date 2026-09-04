@@ -18,6 +18,12 @@ minutes.
 set -e
 
 # Ruby: the VM ships 3.1/3.2/3.3 by default; Moneymap needs 3.4.10 (.ruby-version).
+# The image's bundled ruby-build definitions can lag behind actual Ruby releases
+# and not know about 3.4.10 yet ("ruby-build: definition not found: 3.4.10") --
+# pull the latest definitions first rather than assuming the image is current.
+for d in /opt/rbenv/plugins/ruby-build "$(rbenv root)/plugins/ruby-build"; do
+  [ -d "$d" ] && git -C "$d" pull -q
+done
 rbenv install -s 3.4.10
 rbenv global 3.4.10
 gem install bundler
