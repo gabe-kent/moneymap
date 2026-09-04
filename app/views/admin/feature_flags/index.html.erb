@@ -21,11 +21,11 @@
             </td>
             <td>
               <ul class="flex flex-col gap-1">
-                <% flag.users.each do |user| %>
+                <% flag.feature_flag_assignments.each do |assignment| %>
                   <li class="flex items-center gap-2">
-                    <%= user.email_address %>
+                    <%= assignment.user.email_address %>
                     <%= button_to "Revoke",
-                          admin_feature_flag_assignment_path(flag, flag.feature_flag_assignments.find_by(user: user)),
+                          admin_feature_flag_assignment_path(flag, assignment),
                           method: :delete, class: "btn btn-xs btn-ghost text-error" %>
                   </li>
                 <% end %>
