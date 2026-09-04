@@ -61,6 +61,11 @@ tests, build, or AI calls — a few seconds of Actions time, nothing more — so
 "review this standing PR and merge it," never "remember to go create one." Merge it as a plain
 merge, not squash, so `main`'s history matches what `staging` was actually running.
 
+⚠️ **One-time repo setting this depends on:** the workflow authenticates as the built-in Actions
+bot, which needs **Settings → Actions → General → Workflow permissions → "Allow GitHub Actions
+to create and approve pull requests"** enabled — many repos default this off. If the workflow
+run shows a permissions error instead of opening the PR, this is the first thing to check.
+
 ### Exception: hotfixes
 
 A bug actively breaking production shouldn't wait for a staging round-trip. For that case only:
