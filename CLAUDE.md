@@ -37,6 +37,15 @@ exists today. The **Conventions** below are the subset of that plan already adop
   `docs/staging-environment-setup.md` for the full walkthrough. Don't assume a staging URL exists
   until this note is updated to say it's live.
 
+## Development workflow
+
+Full details in `docs/agentic-development-lifecycle.md` — the short version: **open PRs against
+`staging`, not `main`**. `staging` deploys to `moneymap-staging`; a separate, deliberate
+`staging` → `main` merge promotes to production. The only exception is a hotfix for a live
+production bug, which goes straight to `main` and gets back-merged into `staging` after. Bugs,
+feature requests, and deferred work are tracked as GitHub Issues (`bug` / `enhancement` /
+`deferred` labels) — see that doc for the reporting/labeling convention.
+
 ## Commands
 
 Database is PostgreSQL; you need a running Postgres server (`config/database.yml`,
