@@ -108,3 +108,14 @@ time if the script is cutting it close. The prebuilt-binary fallback (triggered
 automatically when `ruby-build` fails, e.g. due to `ruby-lang.org` being
 unreachable from this sandbox) is actually faster than compiling, so a fallback
 run should have more headroom, not less.
+
+## Permission prompts in cloud sessions
+
+**`bypassPermissions`/`--dangerously-skip-permissions` isn't available here at
+all** — cloud sessions only offer Accept Edits, Plan, and Auto mode. If a settings
+file with `"defaultMode": "bypassPermissions"` gets read by a cloud session, it's
+silently ignored rather than erroring, so don't assume it's active just because
+it's set somewhere (e.g. in `.claude/settings.local.json` for local sessions —
+that's not a mistake, it just doesn't reach cloud sessions). See
+`docs/claude-code-permission-modes.md` for the full picture, including what's
+actually set up for local sessions on this repo.
