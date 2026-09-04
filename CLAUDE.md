@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@AGENTS.md
+
+Claude Code only reads `CLAUDE.md`, never `AGENTS.md`, in either local or cloud sessions
+(confirmed against [code.claude.com/docs/en/memory.md](https://code.claude.com/docs/en/memory.md)) —
+the import above is what actually makes `AGENTS.md`'s content (currently: the caveman style rule)
+reach Claude Code at all. See `docs/claude-code-plugins-and-mcps.md`'s caveman section for how
+`AGENTS.md` was generated and kept in sync with the other IDE-agent rule files.
+
 ## Project state
 
 Moneymap is a Rails 8.1 application currently at the bootstrap stage: `rails new` plus the

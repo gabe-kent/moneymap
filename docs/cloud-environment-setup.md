@@ -29,6 +29,18 @@ sudo service postgresql start
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" || true
 
 bundle install
+
+# rtk (Rust Token Killer) — a Claude Code PreToolUse hook that transparently
+# compresses Bash tool output before it reaches the model (60-90% token savings
+# on common dev commands). Already configured on the local machine this repo was
+# built on; added here so cloud sessions get the same savings instead of running
+# uncompressed. `rtk init -g` installs its hook into `~/.claude/settings.json` for
+# whichever user runs it — since this script runs as root, verify after the fact
+# (see below) that the cloud session's Claude Code process is reading that same
+# settings file; if the session runs as a different user, this step needs to run
+# as that user instead.
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+rtk init -g
 ```
 
 ## Environment variables
@@ -56,6 +68,9 @@ bin/rails db:test:prepare
 ```bash
 ruby -v        # should print 3.4.10
 bin/rails test # should run against a real Postgres, not fail on missing gems
+rtk gain       # should report command history, not "no commands recorded" —
+               # if it's empty, the hook isn't reaching this session's actual
+               # Claude Code process (see the rtk note in the setup script above)
 ```
 
 If `bundle install` is close to timing out on a cold cache, that's a real risk of
