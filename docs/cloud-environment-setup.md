@@ -18,19 +18,33 @@ minutes.
 set -e
 
 # Ruby: the VM ships 3.1/3.2/3.3 by default; Moneymap needs 3.4.10 (.ruby-version).
-# The image's bundled ruby-build definitions can lag behind actual Ruby releases
-# and not know about 3.4.10 yet ("ruby-build: definition not found: 3.4.10") --
-# pull the latest definitions first rather than assuming the image is current.
-for d in /opt/rbenv/plugins/ruby-build "$(rbenv root)/plugins/ruby-build"; do
-  [ -d "$d" ] && git -C "$d" pull -q
-done
-# cache.ruby-lang.org (ruby-build's default download source, a CDN in front of
-# the real release server) returned a bare 403 to this cloud VM -- likely bot/
-# rate-limit protection on that CDN specifically, not a real "file missing"
-# error. Route around it by pointing straight at the origin server instead.
-export RUBY_BUILD_TARBALL_OVERRIDE="https://ftp.ruby-lang.org/pub/ruby/3.4/ruby-3.4.10.tar.gz"
-rbenv install -s 3.4.10
-rbenv global 3.4.10
+RUBY_VERSION=3.4.10
+if ! rbenv versions --bare | grep -qx "$RUBY_VERSION"; then
+  # The image's bundled ruby-build definitions can lag behind actual Ruby
+  # releases and not know about a brand-new patch version yet ("ruby-build:
+  # definition not found") -- pull the latest definitions first rather than
+  # assuming the image is current.
+  for d in /opt/rbenv/plugins/ruby-build "$(rbenv root)/plugins/ruby-build"; do
+    [ -d "$d" ] && git -C "$d" pull -q
+  done
+  # Preferred: build from source via ruby-build. Falls back to a prebuilt
+  # binary from ruby/ruby-builder (the same GitHub-hosted releases the
+  # `ruby/setup-ruby` GitHub Action uses) if that fails -- both
+  # cache.ruby-lang.org and ftp.ruby-lang.org have returned a bare 403 to this
+  # cloud sandbox's shared egress IP range, which is a domain-level block, not
+  # a single CDN's bot protection, so switching ruby-lang.org subdomains
+  # doesn't help. GitHub is already reachable (this repo was just cloned from
+  # there), so its release CDN is a genuinely different network path.
+  if ! rbenv install -s "$RUBY_VERSION"; then
+    echo "ruby-build failed (ruby-lang.org appears blocked from this sandbox) -- falling back to a prebuilt binary from GitHub" >&2
+    version_dir="$(rbenv root)/versions/$RUBY_VERSION"
+    mkdir -p "$version_dir"
+    curl -fsSL "https://github.com/ruby/ruby-builder/releases/download/ruby-${RUBY_VERSION}/ruby-${RUBY_VERSION}-ubuntu-24.04-x64.tar.gz" \
+      | tar -xz --strip-components=1 -C "$version_dir"
+  fi
+fi
+rbenv global "$RUBY_VERSION"
+rbenv rehash
 gem install bundler
 
 # Postgres, configured to match this repo's existing CI (.github/workflows/ci.yml)
