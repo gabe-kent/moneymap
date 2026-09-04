@@ -47,12 +47,15 @@ exists today. The **Conventions** below are the subset of that plan already adop
 
 ## Development workflow
 
-Full details in `docs/agentic-development-lifecycle.md` — the short version: **open PRs against
-`staging`, not `main`**. `staging` deploys to `moneymap-staging`; a separate, deliberate
-`staging` → `main` merge promotes to production. The only exception is a hotfix for a live
-production bug, which goes straight to `main` and gets back-merged into `staging` after. Bugs,
-feature requests, and deferred work are tracked as GitHub Issues (`bug` / `enhancement` /
-`deferred` labels) — see that doc for the reporting/labeling convention.
+⏸️ **Staging is paused as of 2026-09-04 — open PRs against `main` directly, not `staging`.**
+Full details (including how to resume) are in `docs/agentic-development-lifecycle.md`'s
+"Staging is currently paused" section; the short version is that build velocity comes first
+while the product is still young, and merging a PR now deploys straight to production (there is
+no pre-prod check in between). Compensate by testing locally before merging — `bin/ci`, plus a
+manual click-through of the actual change — since there's no staging deploy to verify against
+instead. Bugs, feature requests, and deferred work are still tracked as GitHub Issues (`bug` /
+`enhancement` / `deferred` labels) — see the lifecycle doc for that convention, which is
+unaffected by the pause.
 
 ## Commands
 

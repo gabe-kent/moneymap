@@ -8,17 +8,19 @@
 rails test, seed smoke test), or name the specific commands you ran if you didn't run the
 whole suite. -->
 
-**Manual QA on staging** (once this deploys to moneymap-staging — skip this section only for
-a doc/test-only PR going straight to `main`, see `docs/agentic-development-lifecycle.md`):
+**Manual QA before merging** (staging is currently paused — see
+`docs/agentic-development-lifecycle.md` — so merging this deploys straight to production;
+QA it locally, e.g. via `bin/dev`, not on a staging deploy. Skip this section only for a
+doc/test-only PR with no runtime behavior to check):
 
-<!-- Concrete, PR-specific steps for whoever reviews the staging deploy — not a generic
-checklist. Write these as things to click through and check, e.g.:
-- [ ] Sign in, open the dashboard, confirm the new KPI card shows the right numbers
-- [ ] Toggle the new feature flag off and confirm the old behavior is unchanged
+<!-- Concrete, PR-specific steps you actually ran locally — not a generic checklist. Write
+these as things you clicked through and checked, e.g.:
+- [ ] Signed in, opened the dashboard, confirmed the new KPI card shows the right numbers
+- [ ] Toggled the new feature flag off and confirmed the old behavior is unchanged
 -->
 
 ## Related issue
 
-<!-- Fixes #123 / Closes #123, if this closes a tracked issue. Remember: with the
-staging-first flow, GitHub fires the auto-close on the `main` merge (the promotion), not
-this PR's merge into `staging`. -->
+<!-- Fixes #123 / Closes #123, if this closes a tracked issue. While staging is paused, GitHub
+fires the auto-close on this PR's own merge to `main` — once staging resumes, it instead fires
+on the later `main` promotion, not the initial PR into `staging`. -->
