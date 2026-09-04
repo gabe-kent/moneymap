@@ -3,6 +3,12 @@ Rails.application.routes.draw do
   get "home/index"
   resource :session
   resources :passwords, param: :token
+  resource :settings, only: %i[ edit update ]
+  resources :user_sessions, only: %i[ destroy ] do
+    collection do
+      delete :destroy_all
+    end
+  end
   resources :accounts, except: :show
   resources :categories, except: :show
   resources :transactions, except: :show
