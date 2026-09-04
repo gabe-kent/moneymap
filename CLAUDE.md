@@ -169,6 +169,19 @@ Queue back into its own `type: worker` service in `render.yaml`.
   `docs/superpowers/specs/2026-09-04-feature-flags-design.md` for why. Check one with
   `FeatureFlag.enabled?(:key, user: Current.user)` (logic lives in
   `app/services/feature_flag_check.rb`; global enablement always wins over a per-user override).
+  To add a new flag: add its key to `FeatureFlag::REGISTRY` in `app/models/feature_flag.rb`, then
+  visit `/admin/feature_flags` (creates its row automatically) to toggle it globally or grant it
+  to specific users by email — takes effect immediately, no deploy. The admin UI itself is gated
+  by `User#admin` (boolean column). **Granting `admin` differs by environment** — there's no
+  self-serve UI for it, and Render's free plan has no SSH/console access, so
+  `User.find_by(...).update!(admin: true)` in a Rails console only works in local dev. In
+  production, `db/seeds.rb`'s existing `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` env-var login
+  (already used for the founder's personal, non-self-serve account) is also the admin bootstrap:
+  it grants that one user `admin: true` on every boot, since `db:seed` reruns on every deploy
+  (`bin/docker-entrypoint`). No other production user can become admin without either changing
+  those env vars or a future self-serve grant path. See
+  `docs/agentic-development-lifecycle.md`'s "Large or risky changes" section for *when* to reach
+  for a flag, not just how.
 
 ### Security — don't reintroduce gaps `docs/production-launch-tbd.md` already tracks
 
@@ -208,14 +221,3 @@ categories of gap, not adding to them:
   committed. Same handling `RAILS_MASTER_KEY` already gets in `render.yaml`.
 - Update `docs/production-launch-tbd.md` as items get closed, rather than letting it silently go
   stale — it's only useful as a reference if it still reflects reality.
-  To add a new flag: add its key to `FeatureFlag::REGISTRY` in `app/models/feature_flag.rb`, then
-  visit `/admin/feature_flags` (creates its row automatically) to toggle it globally or grant it
-  to specific users by email — takes effect immediately, no deploy. The admin UI itself is gated
-  by `User#admin` (boolean column). **Granting `admin` differs by environment** — there's no
-  self-serve UI for it, and Render's free plan has no SSH/console access, so
-  `User.find_by(...).update!(admin: true)` in a Rails console only works in local dev. In
-  production, `db/seeds.rb`'s existing `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` env-var login
-  (already used for the founder's personal, non-self-serve account) is also the admin bootstrap:
-  it grants that one user `admin: true` on every boot, since `db:seed` reruns on every deploy
-  (`bin/docker-entrypoint`). No other production user can become admin without either changing
-  those env vars or a future self-serve grant path.

@@ -131,6 +131,23 @@ PR straight against `main`, merge, deploy, then immediately back-merge (or cherr
 into `staging` so the two don't diverge. Along with the doc/test-only case above, this is one of
 the only two sanctioned paths that skip staging — everything else goes through it.
 
+## Large or risky changes: ship behind a flag
+
+A feature big enough to want its own dedicated testing — a new screen, a workflow that touches
+real user data, anything you're not fully confident in yet — doesn't have to wait for a "safe"
+moment to merge. Build it behind a feature flag instead: merge and deploy it *off* by default, so
+it's live in production but invisible to users, then flip it on (globally, or just for your own
+account first) once you've actually checked it there. See `CLAUDE.md`'s Feature flags convention
+for the how; this is the when.
+
+This matters more, not less, while staging is paused (see the top of this doc) — there's no
+pre-prod deploy to catch a half-finished feature before real users see it, so a flag is what
+keeps "merge early, in small pieces" safe without one. It complements the QA checklist below, not
+replaces it: QA still verifies the code works; the flag controls who's exposed to it while you're
+still finding that out. Small, low-risk changes (a copy tweak, a bug fix, a config change) don't
+need this — reach for a flag when the change is big enough, or new enough, that you'd want to
+back out of *visibility* quickly without a revert if something's wrong.
+
 ## Every PR summarizes its own QA
 
 `.github/pull_request_template.md` gives every new PR a **QA** section with two parts, so
