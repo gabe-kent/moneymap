@@ -169,6 +169,45 @@ Queue back into its own `type: worker` service in `render.yaml`.
   `docs/superpowers/specs/2026-09-04-feature-flags-design.md` for why. Check one with
   `FeatureFlag.enabled?(:key, user: Current.user)` (logic lives in
   `app/services/feature_flag_check.rb`; global enablement always wins over a per-user override).
+
+### Security — don't reintroduce gaps `docs/production-launch-tbd.md` already tracks
+
+That doc lists what's *currently* open (no sign-up flow, no CSP, no 2FA, etc.) as a backlog, not
+an excuse to add more of the same going forward. New code should default to closing these
+categories of gap, not adding to them:
+
+- **New sensitive/financial/PII columns use Rails' built-in `encrypts`** by default (see the
+  [Active Record Encryption guide](https://guides.rubyonrails.org/active_record_encryption.html)),
+  unless there's a specific reason not to (e.g. needing to query or aggregate on the column
+  un-encrypted). Don't wait for a dedicated "add encryption" pass later — add it when the
+  migration is written, same as choosing `money-rails` for a new money column isn't optional.
+- **New user-input fields get an explicit length/format validation.** Rails defaults aren't
+  enough on their own — `has_secure_password`'s own validations cover presence and confirmation
+  match, not a minimum length, which is exactly how `User` ended up accepting a 1-character
+  password. Don't assume a gem's default validations are complete; check.
+- **Credential checks always go through `authenticate_by`** (already the pattern in
+  `SessionsController`), never a plain `find_by(...).try(:authenticate)` — the former is
+  specifically written to avoid the timing difference that would otherwise leak whether an email
+  address exists in the system.
+- **New sensitive/abusable endpoints get throttled like the existing ones.** Any new endpoint
+  that accepts credentials, sends email, or otherwise invites abuse (a future sign-up form,
+  invites, etc.) should get the same `rack-attack` + Rails 8 `rate_limit` treatment
+  `config/initializers/rack_attack.rb` already applies to login and password reset — don't ship a
+  new attackable endpoint without it.
+- **Never pass raw user input to `redirect_to`.** Only known-safe/internal paths. Rails 8's own
+  open-redirect protection (`ActionController::Redirecting::UnsafeRedirectError`) catches some of
+  this automatically, but treat it as a backstop, not the actual control.
+- **Money-moving actions (transfers, and anything like them later) should consider step-up
+  re-confirmation, not just "is logged in."** Not implemented today, but worth designing for as
+  `Transfers` and similar features grow — OWASP's [ASVS](https://owasp.org/www-project-application-security-verification-standard/)
+  calls this out explicitly for financial applications (segregation of duties / adaptive
+  authentication for high-value actions), and it's a much smaller lift to design in from the
+  start than to retrofit once several transfer-like features exist.
+- **New third-party service credentials (SMTP, error monitoring, Plaid, etc.) go through Rails
+  encrypted credentials or a Render secret env var (`sync: false`)** — never hardcoded, never
+  committed. Same handling `RAILS_MASTER_KEY` already gets in `render.yaml`.
+- Update `docs/production-launch-tbd.md` as items get closed, rather than letting it silently go
+  stale — it's only useful as a reference if it still reflects reality.
   To add a new flag: add its key to `FeatureFlag::REGISTRY` in `app/models/feature_flag.rb`, then
   visit `/admin/feature_flags` (creates its row automatically) to toggle it globally or grant it
   to specific users by email — takes effect immediately, no deploy. The admin UI itself is gated
