@@ -15,15 +15,18 @@ reply, use the plain-language rules below instead. Resume caveman after.
 
 Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused. Resume after.
 
-Boundaries: code/commits/PRs written normal. Docs/PR descriptions follow the
+Boundaries: code/commits/PRs written normal. Design docs/specs/plans
+(docs/superpowers/specs/**, docs/superpowers/plans/**) also written normal —
+precision for a technical reviewer matters more than compression or
+simplification there. PR descriptions and non-technical docs follow the
 plain-language rule below instead of caveman or "normal."
 <!-- caveman-end -->
 
 <!-- eli5-begin -->
-Plain-language rule: docs/**, README.md, and PR descriptions/titles — this repo's
-own docs are explicitly written for a non-technical collaborator (see
-docs/getting-started.md, docs/agentic-development-lifecycle.md), so anything added
-to them follows plain-language rules, not caveman:
+Plain-language rule: docs/** meant for a non-technical reader — README.md,
+docs/getting-started.md, docs/agentic-development-lifecycle.md, and similar —
+plus PR descriptions/titles. This repo's docs of that kind are explicitly written
+for a non-technical collaborator, so they follow plain-language rules, not caveman:
 
 - No jargon without explaining it in plain words the first time it's used
 - Short sentences, one idea at a time
@@ -32,8 +35,11 @@ to them follows plain-language rules, not caveman:
 - Avoid "just"/"simply" — implies something is easy when the reader may not know that yet
 
 Applies to live chat/terminal replies only on request (see "On request" above) —
-otherwise caveman governs those. Doesn't apply to actual code/commit content
-(still written normal). The two rules only ever govern one reply at a time, never
-compete for the same text: caveman is the default for conversation, this is what
-you get when you ask for it there, and what governs docs/PRs by default.
+otherwise caveman governs those. Doesn't apply to code/commits, or to design
+docs/specs/plans (docs/superpowers/specs/**, docs/superpowers/plans/**) — those
+stay normal technical prose (see caveman boundary above), since a spec's reader
+is deciding whether to approve it, not learning the domain from scratch. Three
+buckets total, never overlapping on the same text: caveman (conversation
+default), plain-language (non-technical docs/PRs, or on request in chat), normal
+technical prose (code, commits, specs, plans).
 <!-- eli5-end -->
