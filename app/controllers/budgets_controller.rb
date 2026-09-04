@@ -1,4 +1,5 @@
 class BudgetsController < ApplicationController
+  gate_behind :budgets
   before_action :set_month, only: %i[ index ]
   before_action :set_budget, only: %i[ edit update destroy ]
 

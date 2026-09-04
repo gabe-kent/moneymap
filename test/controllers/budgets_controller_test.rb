@@ -6,6 +6,7 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
     @other_user = users(:two)
     @category = @user.categories.create!(name: "Groceries", kind: "expense", color: "orange")
     @account = @user.accounts.create!(name: "Checking", kind: "checking", starting_balance_cents: 100_000)
+    enable_feature :budgets
     sign_in_as @user
   end
 

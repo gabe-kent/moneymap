@@ -4,6 +4,7 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
     @other_user = users(:two)
+    enable_feature :reports
   end
 
   test "requires authentication" do

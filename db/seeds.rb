@@ -139,6 +139,19 @@ if demo_user.budgets.none?
   puts "Seeded #{demo_user.budgets.count} budgets."
 end
 
+# Feature flags for the dashboard/budgets/reports pages, enabled in DEVELOPMENT
+# ONLY. This deliberately does not run in production: seeds execute on every
+# container boot there, so enabling flags here would make the gate decorative and
+# ship the pages to everyone the moment they deploy. Toggle them for real at
+# /admin/feature_flags (takes effect immediately, no deploy).
+if Rails.env.development?
+  FeatureFlag::REGISTRY.each do |key|
+    FeatureFlag.find_or_create_by!(key: key).update!(globally_enabled: true)
+  end
+
+  puts "Enabled #{FeatureFlag.count} feature flags (development only)."
+end
+
 # Personal login, opt-in via env vars set in the Render dashboard (there's no self-serve
 # sign-up yet, and SSH/console access isn't available on the free plan). Only sets the
 # password on creation, so re-running this after changing SEED_ADMIN_PASSWORD won't

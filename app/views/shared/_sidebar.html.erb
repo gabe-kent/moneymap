@@ -1,11 +1,13 @@
 <%# 240px persistent nav. `active` is matched on controller_path so a nested page
     (editing a budget, revoking a session) keeps its section highlighted. %>
+<%# Flag-gated sections are dropped from the nav entirely rather than shown and
+    404ing on click. `feature` is the flag key; an entry without one is always on. %>
 <% nav = [
-     { label: "Dashboard",    path: dashboard_path,    icon: "house",        controllers: %w[ dashboard home ] },
+     { label: "Dashboard",    path: dashboard_path,    icon: "house",        controllers: %w[ dashboard home ], feature: :dashboard },
      { label: "Transactions", path: transactions_path, icon: "receipt",      controllers: %w[ transactions transfers ] },
-     { label: "Budgets",      path: budgets_path,      icon: "wallet",       controllers: %w[ budgets ] },
-     { label: "Reports",      path: reports_path,      icon: "chart-column", controllers: %w[ reports ] }
-   ]
+     { label: "Budgets",      path: budgets_path,      icon: "wallet",       controllers: %w[ budgets ], feature: :budgets },
+     { label: "Reports",      path: reports_path,      icon: "chart-column", controllers: %w[ reports ], feature: :reports }
+   ].select { |item| item[:feature].nil? || feature_enabled?(item[:feature]) }
    manage = [
      { label: "Accounts",   path: accounts_path,   icon: "landmark", controllers: %w[ accounts ] },
      { label: "Categories", path: categories_path, icon: "layers",   controllers: %w[ categories ] }

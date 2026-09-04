@@ -1,7 +1,8 @@
 class FeatureFlag < ApplicationRecord
-  # Placeholders for the upcoming dashboard/budgets work (see docs/repo-review-2026-08-29.md) —
-  # add a key here before creating a FeatureFlag row with it.
-  REGISTRY = %w[budgets dashboard].freeze
+  # Add a key here before creating a FeatureFlag row with it. `budgets` and
+  # `dashboard` were placeholders for the work in docs/repo-review-2026-08-29.md;
+  # `reports` covers the third page that arrived with the same design handoff.
+  REGISTRY = %w[budgets dashboard reports].freeze
 
   has_many :feature_flag_assignments, dependent: :destroy
   has_many :users, through: :feature_flag_assignments

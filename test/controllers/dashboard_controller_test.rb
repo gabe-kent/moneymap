@@ -4,6 +4,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
     @other_user = users(:two)
+    enable_feature :dashboard
   end
 
   test "requires authentication" do

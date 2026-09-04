@@ -5,6 +5,7 @@ require "test_helper"
 class SidebarNavigationTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
+    FeatureFlag::REGISTRY.each { |key| enable_feature(key) }
   end
 
   test "links every section and the account actions" do
