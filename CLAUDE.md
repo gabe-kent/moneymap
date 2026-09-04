@@ -30,6 +30,12 @@ exists today. The **Conventions** below are the subset of that plan already adop
 - Free-tier Postgres expires 2026-08-19 (created 2026-07-20) — upgrade or recreate before then.
   Recreating will hit the same "queue/cache/cable schemas don't load" issue on first boot;
   `db:prepare_solid_schemas` handles it automatically, no manual action needed.
+- **Staging environment is scaffolded but not yet live**: `render.staging.yaml` + a `staging`
+  branch exist for a `moneymap-staging` Render service, sharing production's free Postgres
+  instance via a separate database rather than a second (paid) instance. The dashboard-side
+  Blueprint creation and secret setup are manual steps not yet done — see
+  `docs/staging-environment-setup.md` for the full walkthrough. Don't assume a staging URL exists
+  until this note is updated to say it's live.
 
 ## Commands
 
