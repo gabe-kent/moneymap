@@ -77,10 +77,18 @@ curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/src/tool
 curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/src/tools/caveman-init.js | node -             # apply
 ```
 
-This repo has it applied — it wrote `AGENTS.md` (repo root, read by Claude Code alongside
-`CLAUDE.md`) plus `.cursor/rules/caveman.mdc`, `.windsurf/rules/caveman.md`,
-`.clinerules/caveman.md`, and `.github/copilot-instructions.md` for parity with other IDE agents.
-Idempotent and safe to re-run; pass `--force` to overwrite, `--only <agent>` to target one.
+This repo has it applied — it wrote `AGENTS.md` (repo root) plus `.cursor/rules/caveman.mdc`,
+`.windsurf/rules/caveman.md`, `.clinerules/caveman.md`, and `.github/copilot-instructions.md` for
+parity with other IDE agents. Idempotent and safe to re-run; pass `--force` to overwrite,
+`--only <agent>` to target one.
+
+⚠️ **Correction — Claude Code does NOT read `AGENTS.md` automatically**, in local or cloud
+sessions; it only reads `CLAUDE.md` (confirmed against
+[code.claude.com/docs/en/memory.md](https://code.claude.com/docs/en/memory.md)). This repo's
+`CLAUDE.md` imports it explicitly (`@AGENTS.md`) so the caveman rule — and anything else added to
+`AGENTS.md` later — actually reaches every Claude Code session, cloud or local, rather than only
+the other IDE agents that do read `AGENTS.md` natively (Cursor, Copilot, etc.). Without that
+import, caveman mode silently never activates for Claude Code despite the file existing.
 
 ⚠️ **Known duplication to clean up:** `superpowers` and `caveman` are each installed **twice**
 from two different marketplaces (`superpowers@superpowers-dev` + `superpowers@claude-plugins-official`;
