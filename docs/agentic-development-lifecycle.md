@@ -82,6 +82,10 @@ auto-close fires on the `main` merge, i.e. the promotion, not the initial PR int
 Leave `deferred` issues open indefinitely; they're a backlog, not something expected to
 auto-close.
 
+Given an issue number or link and asked to work it, use `.claude/skills/work-issue/SKILL.md`
+(`/work-issue <ref>`) rather than starting from scratch — it fetches the issue and hands off to
+`plan-and-build` seeded with that context, then links the resulting PR back to the issue.
+
 If a future collaborator genuinely can't get a GitHub account, the fallback is a shared
 Google Form -> Google Sheet as an intake point, with someone periodically triaging new rows into
 GitHub Issues — but that's not needed today, so it isn't set up.
