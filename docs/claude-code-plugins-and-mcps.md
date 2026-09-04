@@ -90,6 +90,20 @@ sessions; it only reads `CLAUDE.md` (confirmed against
 the other IDE agents that do read `AGENTS.md` natively (Cursor, Copilot, etc.). Without that
 import, caveman mode silently never activates for Claude Code despite the file existing.
 
+**Coexists with a plain-language rule for non-technical-facing content.** This repo's own
+docs are explicitly written for a non-technical collaborator (see `docs/getting-started.md`,
+`docs/agentic-development-lifecycle.md`), which is in direct tension with caveman's "technical
+terms exact" — caveman keeps jargon, ELI5-style plain language avoids it entirely. Rather than
+picking one, `AGENTS.md` has a second, independent block (`eli5-begin`/`eli5-end`, added
+by hand, not by `caveman-init`) that governs `docs/**`, `README.md`, and PR
+descriptions/titles specifically, while caveman continues to govern live chat/terminal
+replies by default — say "eli5" (or "explain like I'm 5" / "in plain terms") in chat to get
+one plain-language reply on demand, same resume-after pattern as caveman's own Auto-Clarity.
+The two never compete for the same text, so there's no actual contradiction — see
+`AGENTS.md` for the exact rule text. Since `caveman-init` only manages its own
+`caveman-begin`/`caveman-end` block on re-run, the hand-added `eli5` block survives a future
+`caveman-init` re-run untouched.
+
 ⚠️ **Known duplication to clean up:** `superpowers` and `caveman` are each installed **twice**
 from two different marketplaces (`superpowers@superpowers-dev` + `superpowers@claude-plugins-official`;
 `caveman@claude-code-skills` + `caveman@caveman`) — visible in `~/.claude/settings.json`'s
