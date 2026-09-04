@@ -36,3 +36,7 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# Ignore personal Claude Code settings (e.g. local permission-mode tweaks) —
+# .claude/settings.json (shared, repo-wide) stays tracked.
+/.claude/settings.local.json
