@@ -475,6 +475,12 @@ Scans the repo and generates a starter `CLAUDE.md`. Refine it with the stack
 rules from Appendix B of the Build & Launch Plan (Hotwire only, money in cents,
 business logic in `app/services/`, etc.).
 
+**Permission prompts getting old?** See `docs/claude-code-permission-modes.md`
+before reaching for `--dangerously-skip-permissions` — it has real gotchas (it's
+silently unavailable in cloud sessions, doesn't skip everything even locally, and
+official guidance is to only use it in a disposable container/VM, never on this
+machine). `auto` mode is the recommended default for cutting prompt volume safely.
+
 **Workflow:** run `bin/dev` in one terminal, `claude` in a second terminal so
 Claude Code edits files while you watch them live-reload in the browser.
 

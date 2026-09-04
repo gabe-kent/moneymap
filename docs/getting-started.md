@@ -76,6 +76,9 @@ needed to file one).
 
 - **A cloud session says it can't push or open a PR** — see "GitHub App install for push/PR
   access" in `docs/environment-setup-runbook.md`'s cloud session bootstrap section.
+- **The constant "may I do X?" prompts are annoying** — don't reach for a "skip all permissions"
+  setting to make them stop; it has real gotchas and isn't even available in cloud sessions. See
+  `docs/claude-code-permission-modes.md` for what to use instead.
 - **You're not sure what a term in one of these docs means** — ask the Claude Code session
   itself; explaining its own workflow is exactly the kind of thing it's good at.
 - **Anything else** — file a GitHub Issue (see `docs/agentic-development-lifecycle.md` →
