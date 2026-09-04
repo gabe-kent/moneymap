@@ -41,10 +41,30 @@ look at and comment on before it ships.
                 Auto-deploys to production (moneymap)
 ```
 
-**PRs target `staging` by default, not `main`.** That's the one habit this whole lifecycle
-depends on — see `docs/staging-environment-setup.md` for how staging is set up, and why it isn't
-a fully separate database yet. If you're an agent picking a base branch for a PR in this repo and
-nothing says otherwise, it's `staging`.
+### Picking the base branch: staging vs. main
+
+**Default is `staging`, not `main`.** That's the one habit this whole lifecycle depends on —
+see `docs/staging-environment-setup.md` for how staging is set up, and why it isn't a fully
+separate database yet. If you're an agent picking a base branch for a PR in this repo and
+nothing below says otherwise, it's `staging`.
+
+**Exception: doc-only and test-only changes go straight to `main`.** A PR qualifies when
+*every* file it touches is one of:
+- Documentation — `docs/**`, `README.md`, `CLAUDE.md`, `AGENTS.md`, code comments
+- Tests only — `test/**`, with no accompanying change to `app/`, `lib/`, `config/`, `db/`, a
+  Gemfile, or CI/deploy config
+
+These carry no runtime risk: nothing about the deployed app changes, so there's nothing for a
+staging QA pass to actually verify. Routing them through staging first only adds a step and lets
+staging drift further ahead of main on content that was never going to be "tested" there anyway.
+
+If a single PR mixes doc/test changes with anything else — app code, config, migrations,
+dependency bumps, CI/deploy files — treat the whole PR as needing `staging`. The exception only
+applies when a change is *entirely* docs/tests; when in doubt, default to `staging`.
+
+After a doc/test-only PR merges to `main`, back-merge (or cherry-pick) it into `staging` too —
+same reasoning as the hotfix exception below, so the two branches don't quietly diverge on
+content that should exist in both.
 
 **Promoting `staging` to `main` is a separate, deliberate step** — not automatic, and not
 something a PR merge does by itself. It's a manual `staging` -> `main` merge (fast-forward when
@@ -56,8 +76,8 @@ point of having the two.
 
 A bug actively breaking production shouldn't wait for a staging round-trip. For that case only:
 PR straight against `main`, merge, deploy, then immediately back-merge (or cherry-pick) the fix
-into `staging` so the two don't diverge. This is the only sanctioned path that skips staging —
-everything else goes through it.
+into `staging` so the two don't diverge. Along with the doc/test-only case above, this is one of
+the only two sanctioned paths that skip staging — everything else goes through it.
 
 ## Reporting bugs, feature requests, and deferred items
 
@@ -88,8 +108,11 @@ GitHub Issues — but that's not needed today, so it isn't set up.
 
 ## For agents working in this repo
 
-- Default PR base branch is `staging`, not `main`, unless you're doing a sanctioned hotfix (see
-  above) or the user explicitly says otherwise.
+- Default PR base branch is `staging`, not `main`, unless you're doing a sanctioned hotfix, the
+  change is entirely docs/tests (see "Picking the base branch" above), or the user explicitly
+  says otherwise.
+- For a doc/test-only PR merged to `main`, remember the back-merge into `staging` — it's easy to
+  forget since there's no QA step prompting you to look at staging at all.
 - `.claude/skills/plan-and-build/SKILL.md`'s "finish the branch" step follows this doc.
 - The `check-specs` command doesn't currently specify a base branch, so `gh pr create` without
   `--base` there defaults to this repo's actual default branch (`main`). Until that command is
