@@ -17,7 +17,7 @@ gem "stimulus-rails"
 # Use Tailwind CSS [https://github.com/rails/tailwindcss-rails]
 gem "tailwindcss-rails"
 # Render icon sets (Lucide) as inline SVG helpers, no JS/npm required [https://github.com/Rails-Designer/rails_icons]
-gem "rails_icons", "~> 1.9"
+gem "rails_icons", "~> 1.10"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
